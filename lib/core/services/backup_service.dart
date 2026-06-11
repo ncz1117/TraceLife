@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File, Directory;
 import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 import '../database/database_helper.dart';
@@ -23,19 +23,24 @@ class BackupService {
 
   static Future<void> exportToFile() async {
     final json = await exportToJson();
-    final tmpDir = kIsWeb ? Directory('') : Directory.systemTemp;
-    final file = File('${tmpDir.path}/trace_life_backup.json');
-    await file.writeAsString(json);
-    await Share.shareXFiles([XFile(file.path)], subject: '迹录数据备份');
+    if (kIsWeb) {
+      // Web: 直接分享文本
+      await Share.share(json, subject: '迹录数据备份');
+    } else {
+      // Native: 写临时文件再分享
+      final tmpDir = Directory.systemTemp;
+      final file = File('${tmpDir.path}/trace_life_backup.json');
+      await file.writeAsString(json);
+      await Share.shareXFiles([XFile(file.path)], subject: '迹录数据备份');
+    }
   }
 
-  static Future<int> importFromJson(String json) async {
+  static Future<int> importFromJson(String json, {bool Function(Map<String, dynamic>)? onRecord}) async {
     final data = jsonDecode(json) as Map<String, dynamic>;
     final db = DatabaseHelper.instance;
     int count = 0;
 
-    final diaries = data['diaries'] as List? ?? [];
-    for (final diary in diaries) {
+    for (final diary in (data['diaries'] as List? ?? [])) {
       final d = diary as Map<String, dynamic>;
       if (d.containsKey('id') && d['id'] != null) {
         final existing = await db.query('diaries', where: 'id = ?', whereArgs: [d['id']]);
@@ -46,8 +51,7 @@ class BackupService {
       }
     }
 
-    final counters = data['day_counters'] as List? ?? [];
-    for (final counter in counters) {
+    for (final counter in (data['day_counters'] as List? ?? [])) {
       final c = counter as Map<String, dynamic>;
       if (c.containsKey('id') && c['id'] != null) {
         final existing = await db.query('day_counters', where: 'id = ?', whereArgs: [c['id']]);

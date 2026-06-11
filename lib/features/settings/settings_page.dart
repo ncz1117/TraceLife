@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:io' show File;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../shared/widgets/app_scaffold.dart';
@@ -83,8 +84,10 @@ class SettingsPage extends StatelessWidget {
             );
             if (result == null || result.files.isEmpty) return;
 
-            final file = File(result.files.single.path!);
-            final json = await file.readAsString();
+            final file = result.files.single;
+            final json = kIsWeb
+                ? String.fromCharCodes(file.bytes ?? [])
+                : await File(file.path!).readAsString();
             final count = await BackupService.importFromJson(json);
 
             if (context.mounted) {
