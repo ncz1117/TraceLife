@@ -19,7 +19,7 @@ class DiaryPreviewCard extends StatelessWidget {
         : diary.content;
 
     return AppCard(
-      onTap: () => context.go('/diary/edit', extra: diary.date),
+      onTap: () => context.push('/diary/edit', extra: diary.date),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

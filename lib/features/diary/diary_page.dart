@@ -48,7 +48,7 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
               _focusedDay = focusedDay;
             });
             final dateStr = _dateToStr(selectedDay);
-            context.go('/diary/edit', extra: dateStr);
+            context.push('/diary/edit', extra: dateStr);
           },
           onPageChanged: (focusedDay) {
             setState(() => _focusedDay = focusedDay);

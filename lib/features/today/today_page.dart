@@ -35,7 +35,7 @@ class TodayPage extends ConsumerWidget {
             icon: Icons.celebration_outlined,
             message: '还没有纪念日',
             actionLabel: '添加一个',
-            onAction: () => context.go('/day-counter/add'),
+            onAction: () => context.push('/day-counter/add'),
           )
         else
           SizedBox(
@@ -60,7 +60,7 @@ class TodayPage extends ConsumerWidget {
             icon: Icons.edit_note_rounded,
             message: '今天还没有日记',
             actionLabel: '记录今天',
-            onAction: () => context.go('/diary/edit', extra: null),
+            onAction: () => context.push('/diary/edit', extra: null),
           ),
       ],
     );

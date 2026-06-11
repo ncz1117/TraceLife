@@ -28,7 +28,7 @@ class AppScaffold extends StatelessWidget {
               leading: showBack
                   ? IconButton(
                       icon: const Icon(Icons.arrow_back_rounded),
-                      onPressed: () => context.pop(),
+                      onPressed: () => GoRouter.of(context).pop(),
                     )
                   : null,
             )
