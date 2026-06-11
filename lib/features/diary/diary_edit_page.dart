@@ -9,6 +9,7 @@ import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_utils.dart';
 import '../today/providers/today_providers.dart';
+import 'providers/diary_providers.dart';
 
 class DiaryEditPage extends ConsumerStatefulWidget {
   final String? date;
@@ -57,6 +58,8 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     await repo.save(diary);
     if (mounted) {
       ref.invalidate(todayDiaryProvider);
+      ref.invalidate(diaryListProvider);
+      ref.invalidate(diaryByMonthProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('日记已保存')),
       );
@@ -75,6 +78,8 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
       await DiaryRepositoryImpl().delete(_existingId!);
       if (mounted) {
         ref.invalidate(todayDiaryProvider);
+        ref.invalidate(diaryListProvider);
+        ref.invalidate(diaryByMonthProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('日记已删除')),
         );
