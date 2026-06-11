@@ -26,6 +26,8 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
   int _mood = 3;
   String _dateStr = '';
   bool _isLoading = true;
+  String _initialContent = '';
+  int _initialMood = 3;
   int? _existingId;
 
   @override
@@ -40,14 +42,21 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     }
   }
 
+  bool get _hasUnsavedChanges =>
+      _controller.text != _initialContent ||
+      _mood != _initialMood;
+
   Future<void> _loadExisting() async {
     final repo = DiaryRepositoryImpl();
     final existing = await repo.getById(_existingId!);
     if (mounted) {
       setState(() {
         _dateStr = existing?.date ?? AppDateUtils.todayStr();
+        _existingId = existing?.id;
         _controller.text = existing?.content ?? '';
         _mood = existing?.mood ?? 3;
+        _initialContent = existing?.content ?? '';
+        _initialMood = existing?.mood ?? 3;
         _isLoading = false;
       });
     }
@@ -110,7 +119,21 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
 
     final isEdit = _existingId != null;
 
-    return AppScaffold(
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!_hasUnsavedChanges) return;
+        final confirmed = await AppConfirmDialog.show(
+          context,
+          title: '放弃修改？',
+          message: '你有未保存的修改，确定要离开吗？',
+        );
+        if (confirmed && context.mounted) {
+          context.pop();
+        }
+      },
+      child: AppScaffold(
       title: AppDateUtils.formatDisplay(_dateStr),
       showBack: true,
       actions: [
@@ -175,6 +198,7 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
           ),
         ],
       ),
+    ),
     );
   }
 }

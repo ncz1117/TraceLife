@@ -6,6 +6,7 @@ import '../../features/day_counter/day_counter_page.dart';
 import '../../features/diary/diary_edit_page.dart';
 import '../../features/day_counter/day_counter_add_page.dart';
 import '../../features/day_counter/model/day_counter.dart';
+import '../../features/settings/settings_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,6 +33,12 @@ final appRouter = GoRouter(
           path: '/day-counter',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: DayCounterPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/settings',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: SettingsPage(),
           ),
         ),
       ],
@@ -62,6 +69,7 @@ class MainShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.toString();
     if (location.startsWith('/diary') && !location.startsWith('/diary/edit')) return 1;
     if (location.startsWith('/day-counter') && !location.startsWith('/day-counter/add')) return 2;
+    if (location.startsWith('/settings')) return 3;
     return 0;
   }
 
@@ -81,6 +89,8 @@ class MainShell extends StatelessWidget {
               context.go('/diary');
             case 2:
               context.go('/day-counter');
+            case 3:
+              context.go('/settings');
           }
         },
         destinations: const [
@@ -98,6 +108,11 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.celebration_outlined),
             selectedIcon: Icon(Icons.celebration_rounded),
             label: '纪念日',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings_rounded),
+            label: '设置',
           ),
         ],
       ),
