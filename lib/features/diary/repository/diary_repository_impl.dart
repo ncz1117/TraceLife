@@ -1,4 +1,4 @@
-import '../../../../core/database/database_helper.dart';
+import '../../../core/database/database_helper.dart';
 import '../model/diary.dart';
 import 'diary_repository.dart';
 
@@ -7,15 +7,13 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   Future<List<Diary>> getAll() async {
-    final db = await _db.database;
-    final maps = await db.query('diaries', orderBy: 'date DESC');
+    final maps = await _db.query('diaries', orderBy: 'date DESC');
     return maps.map((m) => DiaryMapper.fromDb(m)).toList();
   }
 
   @override
   Future<Diary?> getByDate(String date) async {
-    final db = await _db.database;
-    final maps = await db.query(
+    final maps = await _db.query(
       'diaries',
       where: 'date = ?',
       whereArgs: [date],
@@ -26,12 +24,11 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   Future<List<Diary>> getByMonth(int year, int month) async {
-    final db = await _db.database;
     final start = '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-01';
     final end = month == 12
         ? '${year + 1}-01-01'
         : '${year.toString().padLeft(4, '0')}-${(month + 1).toString().padLeft(2, '0')}-01';
-    final maps = await db.query(
+    final maps = await _db.query(
       'diaries',
       where: 'date >= ? AND date < ?',
       whereArgs: [start, end],
@@ -42,23 +39,21 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   Future<int> save(Diary diary) async {
-    final db = await _db.database;
     final now = DateTime.now().toIso8601String();
     final existing = await getByDate(diary.date);
     if (existing != null) {
-      return db.update(
+      return _db.update(
         'diaries',
         diary.copyWith(id: existing.id, updatedAt: now).toDb(),
         where: 'id = ?',
         whereArgs: [existing.id],
       );
     }
-    return db.insert('diaries', diary.copyWith(createdAt: now, updatedAt: now).toDb());
+    return _db.insert('diaries', diary.copyWith(createdAt: now, updatedAt: now).toDb());
   }
 
   @override
   Future<int> delete(int id) async {
-    final db = await _db.database;
-    return db.delete('diaries', where: 'id = ?', whereArgs: [id]);
+    return _db.delete('diaries', where: 'id = ?', whereArgs: [id]);
   }
 }

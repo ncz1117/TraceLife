@@ -1,83 +1,162 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 
+/// 跨平台数据库抽象层
+/// - Native (Android/iOS): 使用 sqflite SQLite
+/// - Web: 使用内存 Map（开发调试，不持久化）
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
-  static Database? _database;
-  static bool _initialized = false;
+  static Database? _nativeDb;
+  static final Map<String, List<Map<String, dynamic>>> _memoryDb = {};
+  static bool _isInitialized = false;
+  static bool _isWeb = false;
 
   DatabaseHelper._();
 
-  static void init() {
-    if (!_initialized) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-      _initialized = true;
+  static Future<void> init() async {
+    if (_isInitialized) return;
+    _isWeb = kIsWeb;
+    if (!_isWeb) {
+      _nativeDb = await _initNative();
+    }
+    _initMemory();
+    _isInitialized = true;
+  }
+
+  // ── Native SQLite ──
+
+  static Future<Database> _initNative() async {
+    final dir = await getDatabasesPath();
+    final dbPath = '$dir${Platform.pathSeparator}trace_life.db';
+    return openDatabase(dbPath, version: 1, onCreate: _onCreateNative);
+  }
+
+  static Future<void> _onCreateNative(Database db, int version) async {
+    for (final sql in _tableDDL) {
+      await db.execute(sql);
     }
   }
 
-  Future<Database> get database async {
-    // Ensure FFI is initialized before getting database
-    init();
-    _database ??= await _initDatabase();
-    return _database!;
+  // ── Memory DB ──
+
+  static void _initMemory() {
+    for (final table in ['diaries', 'day_counters']) {
+      _memoryDb[table] = [];
+    }
+    _memoryNextId = {'diaries': 1, 'day_counters': 1};
   }
 
-  Future<Database> _initDatabase() async {
-    // Use temp directory for web, app documents for native
-    final dir = kIsWeb
-        ? '.'
-        : await getDatabasesPath();
-    final dbPath = p.join(dir, 'trace_life.db');
-    debugPrint('Database path: $dbPath');
+  static Map<String, int> _memoryNextId = {};
 
-    return openDatabase(
-      dbPath,
-      version: 1,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+  // ── DDL ──
+
+  static const _tableDDL = [
+    'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+    'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
+    'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
+    'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',
+  ];
+
+  // ── Public API ──
+
+  Future<List<Map<String, dynamic>>> query(
+    String table, {
+    List<String>? columns,
+    String? where,
+    List<Object?>? whereArgs,
+    String? orderBy,
+  }) async {
+    if (_isWeb) {
+      return _memoryQuery(table, where: where, whereArgs: whereArgs, orderBy: orderBy);
+    }
+    return _nativeDb!.query(table,
+        columns: columns, where: where, whereArgs: whereArgs, orderBy: orderBy);
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS diaries (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        date       TEXT    NOT NULL UNIQUE,
-        content    TEXT    NOT NULL DEFAULT '',
-        mood       INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5),
-        created_at TEXT    NOT NULL,
-        updated_at TEXT    NOT NULL
-      )
-    ''');
-
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
-    );
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS day_counters (
-        id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        title       TEXT    NOT NULL,
-        target_date TEXT    NOT NULL,
-        emoji       TEXT    NOT NULL DEFAULT '📅',
-        color_index INTEGER NOT NULL DEFAULT 0,
-        sort_order  INTEGER NOT NULL DEFAULT 0,
-        created_at  TEXT    NOT NULL
-      )
-    ''');
-
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',
-    );
+  Future<int> insert(String table, Map<String, dynamic> values) async {
+    if (_isWeb) return _memoryInsert(table, values);
+    return _nativeDb!.insert(table, values);
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
+  Future<int> update(String table, Map<String, dynamic> values,
+      {String? where, List<Object?>? whereArgs}) async {
+    if (_isWeb) return _memoryUpdate(table, values, where: where, whereArgs: whereArgs);
+    return _nativeDb!.update(table, values, where: where, whereArgs: whereArgs);
+  }
+
+  Future<int> delete(String table, {String? where, List<Object?>? whereArgs}) async {
+    if (_isWeb) return _memoryDelete(table, where: where, whereArgs: whereArgs);
+    return _nativeDb!.delete(table, where: where, whereArgs: whereArgs);
+  }
+
+  // ── Memory Implementation ──
+
+  List<Map<String, dynamic>> _memoryQuery(String table, {String? where, List<Object?>? whereArgs, String? orderBy}) {
+    var rows = List<Map<String, dynamic>>.from(_memoryDb[table] ?? []);
+    if (where != null) {
+      // 简单等值过滤
+      final parts = where.split(' = ');
+      if (parts.length == 2 && whereArgs != null && whereArgs.isNotEmpty) {
+        final col = parts[0].trim();
+        final val = whereArgs.first;
+        rows = rows.where((r) => r[col] == val).toList();
+      }
+      // 范围过滤 (>= AND <)
+      final rangeMatch = RegExp(r'(\w+) >= \? AND (\w+) < \?').firstMatch(where);
+      if (rangeMatch != null && whereArgs != null && whereArgs.length >= 2) {
+        final col = rangeMatch.group(1)!;
+        final start = whereArgs[0] as String;
+        final end = whereArgs[1] as String;
+        rows = rows.where((r) {
+          final v = r[col] as String;
+          return v.compareTo(start) >= 0 && v.compareTo(end) < 0;
+        }).toList();
+      }
+    }
+    if (orderBy != null) {
+      final desc = orderBy.endsWith(' DESC');
+      final col = orderBy.replaceAll(' DESC', '').replaceAll(' ASC', '').trim();
+      rows.sort((a, b) {
+        final av = a[col] as Comparable;
+        final bv = b[col] as Comparable;
+        return desc ? bv.compareTo(av) : av.compareTo(bv);
+      });
+    }
+    return rows;
+  }
+
+  int _memoryInsert(String table, Map<String, dynamic> values) {
+    final id = _memoryNextId[table]!;
+    _memoryNextId[table] = id + 1;
+    final row = Map<String, dynamic>.from(values);
+    row['id'] = id;
+    _memoryDb[table]!.add(row);
+    return id;
+  }
+
+  int _memoryUpdate(String table, Map<String, dynamic> values,
+      {String? where, List<Object?>? whereArgs}) {
+    int count = 0;
+    final rows = _memoryQuery(table, where: where, whereArgs: whereArgs);
+    for (final row in rows) {
+      row.addAll(values);
+      count++;
+    }
+    return count;
+  }
+
+  int _memoryDelete(String table, {String? where, List<Object?>? whereArgs}) {
+    final before = _memoryDb[table]!.length;
+    final toRemove = _memoryQuery(table, where: where, whereArgs: whereArgs);
+    _memoryDb[table]!.removeWhere((r) => toRemove.contains(r));
+    return before - _memoryDb[table]!.length;
+  }
 
   Future<void> close() async {
-    final db = await database;
-    db.close();
-    _database = null;
+    if (!_isWeb && _nativeDb != null) {
+      _nativeDb!.close();
+      _nativeDb = null;
+    }
   }
 }

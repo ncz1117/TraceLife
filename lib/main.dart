@@ -7,9 +7,9 @@ import 'core/router/app_router.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/database/database_helper.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  DatabaseHelper.init();
+  await DatabaseHelper.init();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
