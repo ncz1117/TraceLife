@@ -29,7 +29,6 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
   String _initialContent = '';
   int _initialMood = 3;
   int? _existingId;
-  bool _confirmedExit = false;
 
   @override
   void initState() {
@@ -120,24 +119,20 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
 
     final isEdit = _existingId != null;
 
-    return PopScope(
-      canPop: !_hasUnsavedChanges || _confirmedExit,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        if (!_hasUnsavedChanges || _confirmedExit) return;
-        final confirmed = await AppConfirmDialog.show(
-          context,
-          title: '放弃修改？',
-          message: '你有未保存的修改，确定要离开吗？',
-        );
-        if (confirmed && context.mounted) {
-          _confirmedExit = true;
-          context.pop();
-        }
-      },
-      child: AppScaffold(
+    Future<bool> onWillPop() async {
+      if (!_hasUnsavedChanges) return true;
+      final confirmed = await AppConfirmDialog.show(
+        context,
+        title: '放弃修改？',
+        message: '你有未保存的修改，确定要离开吗？',
+      );
+      return confirmed;
+    }
+
+    return AppScaffold(
       title: AppDateUtils.formatDisplay(_dateStr),
       showBack: true,
+      onWillPop: _hasUnsavedChanges ? onWillPop : null,
       actions: [
         if (isEdit)
           IconButton(
@@ -200,7 +195,6 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
           ),
         ],
       ),
-    ),
     );
   }
 }
