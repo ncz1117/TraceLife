@@ -1,0 +1,56 @@
+{
+  "@@locale": "en",
+  "appName": "TraceLife",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "confirmDelete": "Are you sure you want to delete?",
+  "confirmDeleteItem": "Are you sure you want to delete \"{name}\"?",
+  "@confirmDeleteItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "diary": "Diary",
+  "writeDiary": "Write Diary",
+  "todayDiary": "Today's Diary",
+  "emptyDiary": "Record Today",
+  "noDiaryToday": "No diary today",
+  "diarySaved": "Diary saved",
+  "diaryDeleted": "Diary deleted",
+  "dayCounter": "Days Count",
+  "addDayCounter": "Add Countdown",
+  "editDayCounter": "Edit Countdown",
+  "dayCounterTitle": "Title",
+  "dayCounterDate": "Date",
+  "dayCounterEmoji": "Emoji",
+  "daysPassed": "{days} days passed",
+  "@daysPassed": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysRemaining": "{days} days remaining",
+  "@daysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "Today",
+  "settings": "Settings",
+  "emptyDayCounter": "No countdowns yet",
+  "addOneNow": "Add one now",
+  "saveSuccess": "Saved successfully",
+  "deleteSuccess": "Deleted successfully",
+  "confirm": "Confirm",
+  "selectDate": "Select Date",
+  "pickEmoji": "Pick an Emoji",
+  "eventName": "Event Name",
+  "eventNameHint": "e.g. First met"
+}

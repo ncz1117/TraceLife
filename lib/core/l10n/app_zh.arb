@@ -1,0 +1,56 @@
+{
+  "@@locale": "zh",
+  "appName": "迹录",
+  "save": "保存",
+  "cancel": "取消",
+  "delete": "删除",
+  "confirmDelete": "确定要删除吗？",
+  "confirmDeleteItem": "确定要删除「{name}」吗？",
+  "@confirmDeleteItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "diary": "日记",
+  "writeDiary": "写日记",
+  "todayDiary": "今日日记",
+  "emptyDiary": "记录今天",
+  "noDiaryToday": "今天还没有日记",
+  "diarySaved": "日记已保存",
+  "diaryDeleted": "日记已删除",
+  "dayCounter": "纪念日",
+  "addDayCounter": "添加纪念日",
+  "editDayCounter": "编辑纪念日",
+  "dayCounterTitle": "标题",
+  "dayCounterDate": "日期",
+  "dayCounterEmoji": "表情",
+  "daysPassed": "已过 {days} 天",
+  "@daysPassed": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "daysRemaining": "剩余 {days} 天",
+  "@daysRemaining": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "today": "今天",
+  "settings": "设置",
+  "emptyDayCounter": "还没有纪念日",
+  "addOneNow": "添加一个吧",
+  "saveSuccess": "保存成功",
+  "deleteSuccess": "删除成功",
+  "confirm": "确认",
+  "selectDate": "选择日期",
+  "pickEmoji": "选个表情",
+  "eventName": "事件名称",
+  "eventNameHint": "例如：认识你"
+}
