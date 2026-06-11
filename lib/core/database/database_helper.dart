@@ -1,22 +1,39 @@
-import 'dart:io';
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
   static Database? _database;
+  static bool _initialized = false;
 
   DatabaseHelper._();
 
+  static void init() {
+    if (!_initialized) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+      _initialized = true;
+    }
+  }
+
   Future<Database> get database async {
+    // Ensure FFI is initialized before getting database
+    init();
     _database ??= await _initDatabase();
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
-    final dir = await getDatabasesPath();
-    final path = '$dir${Platform.pathSeparator}trace_life.db';
+    // Use temp directory for web, app documents for native
+    final dir = kIsWeb
+        ? '.'
+        : await getDatabasesPath();
+    final dbPath = p.join(dir, 'trace_life.db');
+    debugPrint('Database path: $dbPath');
+
     return openDatabase(
-      path,
+      dbPath,
       version: 1,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -56,9 +73,7 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 未来版本迁移
-  }
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
 
   Future<void> close() async {
     final db = await database;

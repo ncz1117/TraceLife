@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/l10n/app_localizations.dart';
+import 'core/database/database_helper.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  DatabaseHelper.init();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
