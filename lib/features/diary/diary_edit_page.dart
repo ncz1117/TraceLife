@@ -60,6 +60,7 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
       ref.invalidate(todayDiaryProvider);
       ref.invalidate(diaryListProvider);
       ref.invalidate(diaryByMonthProvider);
+      ref.invalidate(diaryByDateProvider(_dateStr));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('日记已保存')),
       );
@@ -80,6 +81,7 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
         ref.invalidate(todayDiaryProvider);
         ref.invalidate(diaryListProvider);
         ref.invalidate(diaryByMonthProvider);
+        ref.invalidate(diaryByDateProvider(_dateStr));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('日记已删除')),
         );
