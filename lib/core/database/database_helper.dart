@@ -29,7 +29,7 @@ class DatabaseHelper {
   static Future<Database> _initNative() async {
     final dir = await getDatabasesPath();
     final dbPath = '$dir${Platform.pathSeparator}trace_life.db';
-    return openDatabase(dbPath, version: 2, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
+    return openDatabase(dbPath, version: 3, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
   }
 
   static Future<void> _onCreateNative(Database db, int version) async {
@@ -43,6 +43,14 @@ class DatabaseHelper {
       await db.execute(
         'ALTER TABLE day_counters ADD COLUMN counter_type INTEGER NOT NULL DEFAULT 0',
       );
+    }
+    if (oldVersion < 3) {
+      // 移除 diaries.date 的 UNIQUE 约束，支持一天多篇日记
+      await db.execute('CREATE TABLE diaries_new (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)');
+      await db.execute('INSERT INTO diaries_new SELECT * FROM diaries');
+      await db.execute('DROP TABLE diaries');
+      await db.execute('ALTER TABLE diaries_new RENAME TO diaries');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)');
     }
   }
 
@@ -60,7 +68,7 @@ class DatabaseHelper {
   // ── DDL ──
 
   static List<String> _tableDDL(int version) => [
-    'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
     'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, counter_type INTEGER NOT NULL DEFAULT 0, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',

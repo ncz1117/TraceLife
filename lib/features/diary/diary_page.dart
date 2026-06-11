@@ -22,30 +22,16 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    // 监听月份切换，预加载数据
-    Future.microtask(() {
-      _loadMonth();
-    });
-  }
-
-  void _loadMonth() {
-    ref.read(diaryByMonthProvider({
-      'year': _focusedDay.year,
-      'month': _focusedDay.month,
-    }));
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final monthDiariesAsync = ref.watch(diaryByMonthProvider({
+    final monthDiariesAsync = ref.watch(diariesByMonthProvider({
       'year': _focusedDay.year,
       'month': _focusedDay.month,
     }));
-    final selectedDiaryAsync = ref.watch(diaryByDateProvider(_dateToStr(_selectedDay)));
+    final selectedDiariesAsync = ref.watch(diariesByDateProvider(_dateToStr(_selectedDay)));
 
-    final diaryDates = monthDiariesAsync.valueOrNull?.map((d) => d.date).toSet() ?? {};
+    final diaryDates = monthDiariesAsync.valueOrNull
+            ?.map((d) => d.date)
+            .toSet() ?? {};
 
     return Column(
       children: [
@@ -94,24 +80,102 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
         ),
         const Divider(height: 1),
 
-        // 选中日期日记预览
+        // 选中日期的日记列表
         Expanded(
-          child: selectedDiaryAsync.when(
-            data: (diary) {
-              if (diary == null || diary.content.isEmpty) {
-                return _emptyDiary(context);
-              }
-              return _diaryPreview(context, diary);
-            },
+          child: selectedDiariesAsync.when(
+            data: (diaries) => _buildDiaryList(context, diaries),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => _emptyDiary(context),
+            error: (_, __) => _emptyDay(context),
           ),
         ),
       ],
     );
   }
 
-  Widget _emptyDiary(BuildContext context) {
+  Widget _buildDiaryList(BuildContext context, List<Diary> diaries) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            Text(
+              '共 ${diaries.length} 篇日记',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const Spacer(),
+            FilledButton.tonalIcon(
+              onPressed: () {
+                final dateStr = _dateToStr(_selectedDay);
+                context.push('/diary/edit', extra: dateStr);
+              },
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('写日记'),
+            ),
+          ],
+        ),
+        if (diaries.isEmpty)
+          _emptyDay(context)
+        else
+          ...diaries.map((diary) => _diaryTile(context, diary)),
+      ],
+    );
+  }
+
+  Widget _diaryTile(BuildContext context, Diary diary) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(top: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => context.push('/diary/edit', extra: diary.id),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    ['😢', '😟', '😐', '😊', '😄'][diary.mood.clamp(1, 5) - 1],
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    ['很差', '不好', '一般', '不错', '很好'][diary.mood.clamp(1, 5) - 1],
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    diary.createdAt != null
+                        ? diary.createdAt!.substring(11, 16)
+                        : '',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.outline,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                diary.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyDay(BuildContext context) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -136,40 +200,6 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _diaryPreview(BuildContext context, Diary diary) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            const Text('😐', style: TextStyle(fontSize: 20)),
-            const SizedBox(width: 4),
-            Text(
-              ['很差', '不好', '一般', '不错', '很好'][diary.mood.clamp(1, 5) - 1],
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const Spacer(),
-            FilledButton.tonal(
-              onPressed: () {
-                context.push('/diary/edit', extra: diary.date);
-              },
-              child: const Text('编辑'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          diary.content,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ],
     );
   }
 }

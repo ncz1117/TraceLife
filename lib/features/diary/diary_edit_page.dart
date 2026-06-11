@@ -11,10 +11,11 @@ import '../../core/utils/date_utils.dart';
 import '../today/providers/today_providers.dart';
 import 'providers/diary_providers.dart';
 
+/// extra: String 日期 → 新建；int id → 编辑已有
 class DiaryEditPage extends ConsumerStatefulWidget {
-  final String? date;
+  final dynamic extra;
 
-  const DiaryEditPage({super.key, this.date});
+  const DiaryEditPage({super.key, this.extra});
 
   @override
   ConsumerState<DiaryEditPage> createState() => _DiaryEditPageState();
@@ -30,16 +31,21 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
   @override
   void initState() {
     super.initState();
-    _dateStr = widget.date ?? AppDateUtils.todayStr();
-    _loadExisting();
+    if (widget.extra is int) {
+      _existingId = widget.extra as int;
+      _loadExisting();
+    } else {
+      _dateStr = (widget.extra as String?) ?? AppDateUtils.todayStr();
+      _isLoading = false;
+    }
   }
 
   Future<void> _loadExisting() async {
     final repo = DiaryRepositoryImpl();
-    final existing = await repo.getByDate(_dateStr);
+    final existing = await repo.getById(_existingId!);
     if (mounted) {
       setState(() {
-        _existingId = existing?.id;
+        _dateStr = existing?.date ?? AppDateUtils.todayStr();
         _controller.text = existing?.content ?? '';
         _mood = existing?.mood ?? 3;
         _isLoading = false;
@@ -57,10 +63,10 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     );
     await repo.save(diary);
     if (mounted) {
-      ref.invalidate(todayDiaryProvider);
+      ref.invalidate(todayDiariesProvider);
       ref.invalidate(diaryListProvider);
-      ref.invalidate(diaryByMonthProvider);
-      ref.invalidate(diaryByDateProvider(_dateStr));
+      ref.invalidate(diariesByMonthProvider);
+      ref.invalidate(diariesByDateProvider(_dateStr));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('日记已保存')),
       );
@@ -78,10 +84,10 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     if (confirmed && mounted) {
       await DiaryRepositoryImpl().delete(_existingId!);
       if (mounted) {
-        ref.invalidate(todayDiaryProvider);
+        ref.invalidate(todayDiariesProvider);
         ref.invalidate(diaryListProvider);
-        ref.invalidate(diaryByMonthProvider);
-        ref.invalidate(diaryByDateProvider(_dateStr));
+        ref.invalidate(diariesByMonthProvider);
+        ref.invalidate(diariesByDateProvider(_dateStr));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('日记已删除')),
         );
@@ -102,14 +108,17 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
       return const AppScaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    final isEdit = _existingId != null;
+
     return AppScaffold(
       title: AppDateUtils.formatDisplay(_dateStr),
       showBack: true,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.delete_outline),
-          onPressed: _delete,
-        ),
+        if (isEdit)
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _delete,
+          ),
       ],
       body: Column(
         children: [
@@ -159,7 +168,7 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.save_rounded),
-                  label: const Text('保存'),
+                  label: Text(isEdit ? '更新' : '保存'),
                 ),
               ),
             ),

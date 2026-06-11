@@ -5,7 +5,7 @@ import '../../day_counter/model/day_counter.dart';
 import '../../day_counter/repository/day_counter_repository_impl.dart';
 import '../../../core/utils/date_utils.dart';
 
-final todayDiaryProvider = FutureProvider<Diary?>((ref) async {
+final todayDiariesProvider = FutureProvider<List<Diary>>((ref) async {
   final repo = DiaryRepositoryImpl();
   return repo.getByDate(AppDateUtils.todayStr());
 });

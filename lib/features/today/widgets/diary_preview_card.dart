@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/mood_icon.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/utils/date_utils.dart';
 import '../../diary/model/diary.dart';
 
 class DiaryPreviewCard extends StatelessWidget {
@@ -19,7 +18,7 @@ class DiaryPreviewCard extends StatelessWidget {
         : diary.content;
 
     return AppCard(
-      onTap: () => context.push('/diary/edit', extra: diary.date),
+      onTap: () => context.push('/diary/edit', extra: diary.id),
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,12 +27,13 @@ class DiaryPreviewCard extends StatelessWidget {
             children: [
               MoodIcon(mood: diary.mood, size: 20),
               const Spacer(),
-              Text(
-                AppDateUtils.formatDisplay(diary.date),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-              ),
+              if (diary.createdAt != null)
+                Text(
+                  diary.createdAt!.substring(11, 16),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),

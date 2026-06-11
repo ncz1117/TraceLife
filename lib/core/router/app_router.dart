@@ -40,7 +40,7 @@ final appRouter = GoRouter(
       path: '/diary/edit',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => DiaryEditPage(
-        date: state.extra as String?,
+        extra: state.extra,
       ),
     ),
     GoRoute(

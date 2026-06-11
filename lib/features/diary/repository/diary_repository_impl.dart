@@ -7,16 +7,27 @@ class DiaryRepositoryImpl implements DiaryRepository {
 
   @override
   Future<List<Diary>> getAll() async {
-    final maps = await _db.query('diaries', orderBy: 'date DESC');
+    final maps = await _db.query('diaries', orderBy: 'date DESC, created_at DESC');
     return maps.map((m) => DiaryMapper.fromDb(m)).toList();
   }
 
   @override
-  Future<Diary?> getByDate(String date) async {
+  Future<List<Diary>> getByDate(String date) async {
     final maps = await _db.query(
       'diaries',
       where: 'date = ?',
       whereArgs: [date],
+      orderBy: 'created_at ASC',
+    );
+    return maps.map((m) => DiaryMapper.fromDb(m)).toList();
+  }
+
+  @override
+  Future<Diary?> getById(int id) async {
+    final maps = await _db.query(
+      'diaries',
+      where: 'id = ?',
+      whereArgs: [id],
     );
     if (maps.isEmpty) return null;
     return DiaryMapper.fromDb(maps.first);
@@ -32,7 +43,7 @@ class DiaryRepositoryImpl implements DiaryRepository {
       'diaries',
       where: 'date >= ? AND date < ?',
       whereArgs: [start, end],
-      orderBy: 'date ASC',
+      orderBy: 'date ASC, created_at ASC',
     );
     return maps.map((m) => DiaryMapper.fromDb(m)).toList();
   }
@@ -40,15 +51,15 @@ class DiaryRepositoryImpl implements DiaryRepository {
   @override
   Future<int> save(Diary diary) async {
     final now = DateTime.now().toIso8601String();
-    final existing = await getByDate(diary.date);
-    if (existing != null) {
+    if (diary.id != null) {
       return _db.update(
         'diaries',
-        diary.copyWith(id: existing.id, updatedAt: now).toDb(),
+        diary.copyWith(updatedAt: now).toDb(),
         where: 'id = ?',
-        whereArgs: [existing.id],
+        whereArgs: [diary.id],
       );
     }
+    // 新日记：不再按日期去重，每篇都是新记录
     return _db.insert('diaries', diary.copyWith(createdAt: now, updatedAt: now).toDb());
   }
 

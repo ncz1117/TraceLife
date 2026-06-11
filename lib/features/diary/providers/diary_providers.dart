@@ -8,11 +8,13 @@ final diaryListProvider = FutureProvider<List<Diary>>((ref) async {
   return ref.read(diaryRepositoryProvider).getAll();
 });
 
-final diaryByDateProvider = FutureProvider.family<Diary?, String>((ref, date) async {
+/// 某一天的所有日记
+final diariesByDateProvider = FutureProvider.family<List<Diary>, String>((ref, date) async {
   return ref.read(diaryRepositoryProvider).getByDate(date);
 });
 
-final diaryByMonthProvider = FutureProvider.family<List<Diary>, Map<String, int>>((ref, params) async {
+/// 某个月的日记（用于日历标记）
+final diariesByMonthProvider = FutureProvider.family<List<Diary>, Map<String, int>>((ref, params) async {
   return ref.read(diaryRepositoryProvider).getByMonth(
         params['year']!,
         params['month']!,

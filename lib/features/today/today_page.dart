@@ -14,7 +14,7 @@ class TodayPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayDiaryAsync = ref.watch(todayDiaryProvider);
+    final todayDiariesAsync = ref.watch(todayDiariesProvider);
     final todayCountersAsync = ref.watch(todayCountersProvider);
 
     return ListView(
@@ -53,16 +53,30 @@ class TodayPage extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xl),
 
         // 今日日记区域
-        const AppSectionHeader(title: '今日日记'),
-        todayDiaryAsync.when(
-          data: (diary) => diary != null
-              ? DiaryPreviewCard(diary: diary)
-              : AppEmptyState(
-                  icon: Icons.edit_note_rounded,
-                  message: '今天还没有日记',
-                  actionLabel: '记录今天',
-                  onAction: () => context.push('/diary/edit', extra: null),
-                ),
+        AppSectionHeader(
+          title: '今日日记',
+          actionLabel: '写日记',
+          onAction: () => context.push('/diary/edit', extra: null),
+        ),
+        todayDiariesAsync.when(
+          data: (diaries) {
+            if (diaries.isEmpty) {
+              return AppEmptyState(
+                icon: Icons.edit_note_rounded,
+                message: '今天还没有日记',
+                actionLabel: '记录今天',
+                onAction: () => context.push('/diary/edit', extra: null),
+              );
+            }
+            return Column(
+              children: diaries.map((d) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: DiaryPreviewCard(diary: d),
+                );
+              }).toList(),
+            );
+          },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const SizedBox.shrink(),
         ),
