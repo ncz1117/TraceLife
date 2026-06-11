@@ -4,10 +4,10 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/mood_icon.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_utils.dart';
-import '../providers/today_providers.dart';
+import '../../diary/model/diary.dart';
 
 class DiaryPreviewCard extends StatelessWidget {
-  final FakeDiary diary;
+  final Diary diary;
 
   const DiaryPreviewCard({super.key, required this.diary});
 

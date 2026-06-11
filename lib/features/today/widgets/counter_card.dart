@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../providers/today_providers.dart';
+import '../../day_counter/model/day_counter.dart';
 
 class CounterCard extends StatelessWidget {
-  final FakeCounter counter;
+  final DayCounter counter;
 
   const CounterCard({super.key, required this.counter});
 

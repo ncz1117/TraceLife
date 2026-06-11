@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'providers/diary_providers.dart';
+import 'model/diary.dart';
+import 'repository/diary_repository_impl.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/mood_icon.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_utils.dart';
+import '../today/providers/today_providers.dart';
 
 class DiaryEditPage extends ConsumerStatefulWidget {
   final String? date;
@@ -21,6 +23,8 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
   final _controller = TextEditingController();
   int _mood = 3;
   String _dateStr = '';
+  bool _isLoading = true;
+  int? _existingId;
 
   @override
   void initState() {
@@ -29,35 +33,53 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     _loadExisting();
   }
 
-  void _loadExisting() {
-    // 假数据：查找已有日记
-    final diaries = ref.read(diaryListProvider);
-    final existing = diaries.where((d) => d.date == _dateStr).firstOrNull;
-    if (existing != null) {
-      _controller.text = existing.content;
-      _mood = existing.mood;
+  Future<void> _loadExisting() async {
+    final repo = DiaryRepositoryImpl();
+    final existing = await repo.getByDate(_dateStr);
+    if (mounted) {
+      setState(() {
+        _existingId = existing?.id;
+        _controller.text = existing?.content ?? '';
+        _mood = existing?.mood ?? 3;
+        _isLoading = false;
+      });
     }
   }
 
-  void _save() {
-    // 假数据保存：仅提示成功
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('日记已保存（假数据模式）')),
+  Future<void> _save() async {
+    final repo = DiaryRepositoryImpl();
+    final diary = Diary(
+      id: _existingId,
+      date: _dateStr,
+      content: _controller.text,
+      mood: _mood,
     );
-    context.pop();
+    await repo.save(diary);
+    if (mounted) {
+      ref.invalidate(todayDiaryProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('日记已保存')),
+      );
+      context.pop();
+    }
   }
 
-  void _delete() async {
+  Future<void> _delete() async {
+    if (_existingId == null) return;
     final confirmed = await AppConfirmDialog.show(
       context,
       title: '删除日记',
       message: '确定要删除这篇日记吗？',
     );
     if (confirmed && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('日记已删除（假数据模式）')),
-      );
-      context.pop();
+      await DiaryRepositoryImpl().delete(_existingId!);
+      if (mounted) {
+        ref.invalidate(todayDiaryProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('日记已删除')),
+        );
+        context.pop();
+      }
     }
   }
 
@@ -69,6 +91,10 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const AppScaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return AppScaffold(
       title: AppDateUtils.formatDisplay(_dateStr),
       showBack: true,
@@ -80,7 +106,6 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
       ],
       body: Column(
         children: [
-          // 心情选择
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -105,8 +130,6 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-
-          // 日记输入
           Expanded(
             child: TextField(
               controller: _controller,
@@ -121,8 +144,6 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
               style: Theme.of(context).textTheme.bodyLarge,
             ),
           ),
-
-          // 保存按钮
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),

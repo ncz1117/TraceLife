@@ -23,13 +23,20 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final monthDiaries = ref.watch(diaryByMonthProvider({
+    final monthDiariesAsync = ref.watch(diaryByMonthProvider({
       'year': _focusedDay.year,
       'month': _focusedDay.month,
     }));
 
-    // 提取有日记的日期
-    _diaryDates = monthDiaries.map((d) => d.date).toSet();
+    // 同步更新日记日期集合（仅在数据加载后）
+    monthDiariesAsync.whenOrNull(
+      data: (diaries) {
+        final dates = diaries.map((d) => d.date).toSet();
+        if (dates.length != _diaryDates.length || !dates.containsAll(_diaryDates)) {
+          _diaryDates = dates;
+        }
+      },
+    );
 
     return Column(
       children: [

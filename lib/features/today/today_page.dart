@@ -14,13 +14,12 @@ class TodayPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final todayDiary = ref.watch(todayDiaryProvider);
-    final todayCounters = ref.watch(todayCountersProvider);
+    final todayDiaryAsync = ref.watch(todayDiaryProvider);
+    final todayCountersAsync = ref.watch(todayCountersProvider);
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // 问候
         const DailyGreeting(),
         const SizedBox(height: AppSpacing.xl),
 
@@ -30,38 +29,43 @@ class TodayPage extends ConsumerWidget {
           actionLabel: '查看全部',
           onAction: () => context.go('/day-counter'),
         ),
-        if (todayCounters.isEmpty)
-          AppEmptyState(
-            icon: Icons.celebration_outlined,
-            message: '还没有纪念日',
-            actionLabel: '添加一个',
-            onAction: () => context.push('/day-counter/add'),
-          )
-        else
-          SizedBox(
-            height: 140,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: todayCounters.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(width: AppSpacing.md),
-              itemBuilder: (context, index) =>
-                  CounterCard(counter: todayCounters[index]),
-            ),
-          ),
+        todayCountersAsync.when(
+          data: (counters) => counters.isEmpty
+              ? AppEmptyState(
+                  icon: Icons.celebration_outlined,
+                  message: '还没有纪念日',
+                  actionLabel: '添加一个',
+                  onAction: () => context.push('/day-counter/add'),
+                )
+              : SizedBox(
+                  height: 140,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: counters.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.md),
+                    itemBuilder: (_, i) => CounterCard(counter: counters[i]),
+                  ),
+                ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
         const SizedBox(height: AppSpacing.xl),
 
         // 今日日记区域
         const AppSectionHeader(title: '今日日记'),
-        if (todayDiary != null)
-          DiaryPreviewCard(diary: todayDiary)
-        else
-          AppEmptyState(
-            icon: Icons.edit_note_rounded,
-            message: '今天还没有日记',
-            actionLabel: '记录今天',
-            onAction: () => context.push('/diary/edit', extra: null),
-          ),
+        todayDiaryAsync.when(
+          data: (diary) => diary != null
+              ? DiaryPreviewCard(diary: diary)
+              : AppEmptyState(
+                  icon: Icons.edit_note_rounded,
+                  message: '今天还没有日记',
+                  actionLabel: '记录今天',
+                  onAction: () => context.push('/diary/edit', extra: null),
+                ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
       ],
     );
   }

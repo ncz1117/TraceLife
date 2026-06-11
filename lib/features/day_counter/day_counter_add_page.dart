@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'model/day_counter.dart';
+import 'providers/day_counter_providers.dart';
+import 'repository/day_counter_repository_impl.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_section_header.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_utils.dart';
+import '../today/providers/today_providers.dart';
 
-class DayCounterAddPage extends StatefulWidget {
+class DayCounterAddPage extends ConsumerStatefulWidget {
   const DayCounterAddPage({super.key});
 
   @override
-  State<DayCounterAddPage> createState() => _DayCounterAddPageState();
+  ConsumerState<DayCounterAddPage> createState() => _DayCounterAddPageState();
 }
 
-class _DayCounterAddPageState extends State<DayCounterAddPage> {
+class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   final _titleController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String _selectedEmoji = '🎉';
@@ -22,12 +27,24 @@ class _DayCounterAddPageState extends State<DayCounterAddPage> {
     '🎵', '📚', '✈️', '🏆', '💪', '🎯', '💎', '🌺',
   ];
 
-  void _save() {
+  Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已添加纪念日（假数据模式）')),
+    final counter = DayCounter(
+      title: _titleController.text.trim(),
+      targetDate: '${_selectedDate.year}-'
+          '${_selectedDate.month.toString().padLeft(2, '0')}-'
+          '${_selectedDate.day.toString().padLeft(2, '0')}',
+      emoji: _selectedEmoji,
     );
-    context.pop();
+    await DayCounterRepositoryImpl().save(counter);
+    if (mounted) {
+      ref.invalidate(dayCounterListProvider);
+      ref.invalidate(todayCountersProvider);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已添加纪念日')),
+      );
+      context.pop();
+    }
   }
 
   @override
@@ -55,7 +72,6 @@ class _DayCounterAddPageState extends State<DayCounterAddPage> {
             autofocus: true,
           ),
           const SizedBox(height: AppSpacing.xl),
-
           const AppSectionHeader(title: '日期'),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -79,7 +95,6 @@ class _DayCounterAddPageState extends State<DayCounterAddPage> {
             },
           ),
           const SizedBox(height: AppSpacing.xl),
-
           const AppSectionHeader(title: '表情'),
           Wrap(
             spacing: AppSpacing.sm,
@@ -106,7 +121,6 @@ class _DayCounterAddPageState extends State<DayCounterAddPage> {
             }).toList(),
           ),
           const Spacer(),
-
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(

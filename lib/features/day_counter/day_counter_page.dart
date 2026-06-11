@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'model/day_counter.dart';
 import 'providers/day_counter_providers.dart';
+import 'repository/day_counter_repository_impl.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
@@ -13,16 +15,27 @@ class DayCounterPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final counters = ref.watch(dayCounterListProvider);
+    final countersAsync = ref.watch(dayCounterListProvider);
 
-    if (counters.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.celebration_outlined,
-        message: '还没有纪念日',
-        actionLabel: '添加一个',
-        onAction: () => context.push('/day-counter/add'),
-      );
-    }
+    return countersAsync.when(
+      data: (counters) {
+        if (counters.isEmpty) {
+          return AppEmptyState(
+            icon: Icons.celebration_outlined,
+            message: '还没有纪念日',
+            actionLabel: '添加一个',
+            onAction: () => context.push('/day-counter/add'),
+          );
+        }
+        return _buildList(context, ref, counters);
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const Center(child: Text('加载失败')),
+    );
+  }
+
+  Widget _buildList(BuildContext context, WidgetRef ref, List<DayCounter> counters) {
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: ListView.separated(
@@ -33,7 +46,6 @@ class DayCounterPage extends ConsumerWidget {
           final counter = counters[index];
           final days = counter.daysPassed.abs();
           final label = counter.isFuture ? '剩余' : '已过';
-          final colorScheme = Theme.of(context).colorScheme;
 
           return AppCard(
             onTap: () async {
@@ -43,9 +55,16 @@ class DayCounterPage extends ConsumerWidget {
                 message: '确定要删除「${counter.title}」吗？',
               );
               if (confirmed && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('已删除（假数据模式）')),
-                );
+                final repo = DayCounterRepositoryImpl();
+                if (counter.id != null) {
+                  await repo.delete(counter.id!);
+                  ref.invalidate(dayCounterListProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('已删除')),
+                    );
+                  }
+                }
               }
             },
             child: Row(
@@ -56,10 +75,8 @@ class DayCounterPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        counter.title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
+                      Text(counter.title,
+                          style: Theme.of(context).textTheme.titleMedium),
                       Text(
                         AppDateUtils.formatDisplay(counter.targetDate),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -73,15 +90,15 @@ class DayCounterPage extends ConsumerWidget {
                   children: [
                     Text(
                       '$days',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: colorScheme.primary,
                           ),
                     ),
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    Text(label, style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ],
