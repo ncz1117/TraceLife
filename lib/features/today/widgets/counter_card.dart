@@ -17,39 +17,45 @@ class CounterCard extends StatelessWidget {
       width: 160,
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(counter.emoji, style: const TextStyle(fontSize: 24)),
+                  Text(counter.emoji, style: const TextStyle(fontSize: 20)),
+                  const Spacer(),
                   Text(
                     label,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
+                          fontSize: 11,
                         ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                '$days',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
-              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
+                '$days',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.primary,
+                      height: 1.1,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
                 '天',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                    ),
               ),
               const Spacer(),
               Text(
                 counter.title,
-                style: Theme.of(context).textTheme.labelLarge,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
