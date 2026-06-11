@@ -6,6 +6,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/error_boundary.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/backup_service.dart';
+import '../../core/services/downloader.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -20,7 +21,6 @@ class SettingsPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          // 数据管理
           Text('数据管理',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
@@ -30,7 +30,6 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _buildImportButton(context),
           const Divider(height: AppSpacing.xxl),
-          // 关于
           Text('关于',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
@@ -49,14 +48,17 @@ class SettingsPage extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.file_upload_outlined),
         title: const Text('导出数据'),
-        subtitle: const Text('将日记和纪念日导出为 JSON'),
+        subtitle: const Text('将日记和纪念日导出为 JSON 文件到本地'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () async {
           try {
-            await BackupService.exportToFile();
+            final json = await BackupService.exportToJson();
+            final fileName =
+                'trace_life_backup_${DateTime.now().millisecondsSinceEpoch}.json';
+            downloadJson(json, fileName);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✅ 数据导出成功')),
+                const SnackBar(content: Text('✅ 数据已导出')),
               );
             }
           } catch (e) {

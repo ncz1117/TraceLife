@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'dart:io' show File, Directory;
-import 'package:flutter/foundation.dart';
-import 'package:share_plus/share_plus.dart';
 import '../database/database_helper.dart';
 
+/// 平台无关的备份逻辑
 class BackupService {
   const BackupService._();
 
@@ -21,21 +19,7 @@ class BackupService {
     return const JsonEncoder.withIndent('  ').convert(backup);
   }
 
-  static Future<void> exportToFile() async {
-    final json = await exportToJson();
-    if (kIsWeb) {
-      // Web: 直接分享文本
-      await Share.share(json, subject: '迹录数据备份');
-    } else {
-      // Native: 写临时文件再分享
-      final tmpDir = Directory.systemTemp;
-      final file = File('${tmpDir.path}/trace_life_backup.json');
-      await file.writeAsString(json);
-      await Share.shareXFiles([XFile(file.path)], subject: '迹录数据备份');
-    }
-  }
-
-  static Future<int> importFromJson(String json, {bool Function(Map<String, dynamic>)? onRecord}) async {
+  static Future<int> importFromJson(String json) async {
     final data = jsonDecode(json) as Map<String, dynamic>;
     final db = DatabaseHelper.instance;
     int count = 0;
@@ -61,7 +45,6 @@ class BackupService {
         }
       }
     }
-
     return count;
   }
 }
