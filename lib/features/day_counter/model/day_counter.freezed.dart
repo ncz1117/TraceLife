@@ -23,7 +23,10 @@ DayCounter _$DayCounterFromJson(Map<String, dynamic> json) {
 mixin _$DayCounter {
   int? get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
-  String get targetDate => throw _privateConstructorUsedError;
+  String get targetDate =>
+      throw _privateConstructorUsedError; // countdown: yyyy-MM-dd, birthday: MM-dd
+  int get counterType =>
+      throw _privateConstructorUsedError; // 0=countdown, 1=birthday
   String get emoji => throw _privateConstructorUsedError;
   int get colorIndex => throw _privateConstructorUsedError;
   int get sortOrder => throw _privateConstructorUsedError;
@@ -50,6 +53,7 @@ abstract class $DayCounterCopyWith<$Res> {
     int? id,
     String title,
     String targetDate,
+    int counterType,
     String emoji,
     int colorIndex,
     int sortOrder,
@@ -75,6 +79,7 @@ class _$DayCounterCopyWithImpl<$Res, $Val extends DayCounter>
     Object? id = freezed,
     Object? title = null,
     Object? targetDate = null,
+    Object? counterType = null,
     Object? emoji = null,
     Object? colorIndex = null,
     Object? sortOrder = null,
@@ -94,6 +99,10 @@ class _$DayCounterCopyWithImpl<$Res, $Val extends DayCounter>
                 ? _value.targetDate
                 : targetDate // ignore: cast_nullable_to_non_nullable
                       as String,
+            counterType: null == counterType
+                ? _value.counterType
+                : counterType // ignore: cast_nullable_to_non_nullable
+                      as int,
             emoji: null == emoji
                 ? _value.emoji
                 : emoji // ignore: cast_nullable_to_non_nullable
@@ -129,6 +138,7 @@ abstract class _$$DayCounterImplCopyWith<$Res>
     int? id,
     String title,
     String targetDate,
+    int counterType,
     String emoji,
     int colorIndex,
     int sortOrder,
@@ -153,6 +163,7 @@ class __$$DayCounterImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? title = null,
     Object? targetDate = null,
+    Object? counterType = null,
     Object? emoji = null,
     Object? colorIndex = null,
     Object? sortOrder = null,
@@ -172,6 +183,10 @@ class __$$DayCounterImplCopyWithImpl<$Res>
             ? _value.targetDate
             : targetDate // ignore: cast_nullable_to_non_nullable
                   as String,
+        counterType: null == counterType
+            ? _value.counterType
+            : counterType // ignore: cast_nullable_to_non_nullable
+                  as int,
         emoji: null == emoji
             ? _value.emoji
             : emoji // ignore: cast_nullable_to_non_nullable
@@ -200,6 +215,7 @@ class _$DayCounterImpl extends _DayCounter {
     this.id,
     required this.title,
     required this.targetDate,
+    this.counterType = 0,
     this.emoji = '📅',
     this.colorIndex = 0,
     this.sortOrder = 0,
@@ -215,6 +231,11 @@ class _$DayCounterImpl extends _DayCounter {
   final String title;
   @override
   final String targetDate;
+  // countdown: yyyy-MM-dd, birthday: MM-dd
+  @override
+  @JsonKey()
+  final int counterType;
+  // 0=countdown, 1=birthday
   @override
   @JsonKey()
   final String emoji;
@@ -229,7 +250,7 @@ class _$DayCounterImpl extends _DayCounter {
 
   @override
   String toString() {
-    return 'DayCounter(id: $id, title: $title, targetDate: $targetDate, emoji: $emoji, colorIndex: $colorIndex, sortOrder: $sortOrder, createdAt: $createdAt)';
+    return 'DayCounter(id: $id, title: $title, targetDate: $targetDate, counterType: $counterType, emoji: $emoji, colorIndex: $colorIndex, sortOrder: $sortOrder, createdAt: $createdAt)';
   }
 
   @override
@@ -241,6 +262,8 @@ class _$DayCounterImpl extends _DayCounter {
             (identical(other.title, title) || other.title == title) &&
             (identical(other.targetDate, targetDate) ||
                 other.targetDate == targetDate) &&
+            (identical(other.counterType, counterType) ||
+                other.counterType == counterType) &&
             (identical(other.emoji, emoji) || other.emoji == emoji) &&
             (identical(other.colorIndex, colorIndex) ||
                 other.colorIndex == colorIndex) &&
@@ -257,6 +280,7 @@ class _$DayCounterImpl extends _DayCounter {
     id,
     title,
     targetDate,
+    counterType,
     emoji,
     colorIndex,
     sortOrder,
@@ -282,6 +306,7 @@ abstract class _DayCounter extends DayCounter {
     final int? id,
     required final String title,
     required final String targetDate,
+    final int counterType,
     final String emoji,
     final int colorIndex,
     final int sortOrder,
@@ -297,7 +322,9 @@ abstract class _DayCounter extends DayCounter {
   @override
   String get title;
   @override
-  String get targetDate;
+  String get targetDate; // countdown: yyyy-MM-dd, birthday: MM-dd
+  @override
+  int get counterType; // 0=countdown, 1=birthday
   @override
   String get emoji;
   @override

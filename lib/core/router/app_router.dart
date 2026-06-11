@@ -5,6 +5,7 @@ import '../../features/diary/diary_page.dart';
 import '../../features/day_counter/day_counter_page.dart';
 import '../../features/diary/diary_edit_page.dart';
 import '../../features/day_counter/day_counter_add_page.dart';
+import '../../features/day_counter/model/day_counter.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -45,7 +46,9 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/day-counter/add',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const DayCounterAddPage(),
+      builder: (context, state) => DayCounterAddPage(
+        counter: state.extra as DayCounter?,
+      ),
     ),
   ],
 );

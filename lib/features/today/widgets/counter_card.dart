@@ -10,8 +10,8 @@ class CounterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final days = counter.daysPassed.abs();
-    final label = counter.isFuture ? '剩余' : '已过';
+    final days = counter.daysUntil;
+    final label = counter.labelText;
 
     return SizedBox(
       width: 160,

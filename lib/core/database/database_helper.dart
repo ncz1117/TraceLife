@@ -29,12 +29,20 @@ class DatabaseHelper {
   static Future<Database> _initNative() async {
     final dir = await getDatabasesPath();
     final dbPath = '$dir${Platform.pathSeparator}trace_life.db';
-    return openDatabase(dbPath, version: 1, onCreate: _onCreateNative);
+    return openDatabase(dbPath, version: 2, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
   }
 
   static Future<void> _onCreateNative(Database db, int version) async {
-    for (final sql in _tableDDL) {
+    for (final sql in _tableDDL(version)) {
       await db.execute(sql);
+    }
+  }
+
+  static Future<void> _onUpgradeNative(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE day_counters ADD COLUMN counter_type INTEGER NOT NULL DEFAULT 0',
+      );
     }
   }
 
@@ -51,10 +59,10 @@ class DatabaseHelper {
 
   // ── DDL ──
 
-  static const _tableDDL = [
+  static List<String> _tableDDL(int version) => [
     'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL UNIQUE, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
-    'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, counter_type INTEGER NOT NULL DEFAULT 0, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',
   ];
 

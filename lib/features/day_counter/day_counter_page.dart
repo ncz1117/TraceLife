@@ -8,7 +8,6 @@ import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/utils/date_utils.dart';
 
 class DayCounterPage extends ConsumerWidget {
   const DayCounterPage({super.key});
@@ -44,11 +43,13 @@ class DayCounterPage extends ConsumerWidget {
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
           final counter = counters[index];
-          final days = counter.daysPassed.abs();
-          final label = counter.isFuture ? '剩余' : '已过';
+          final days = counter.daysUntil;
+          final label = counter.labelText;
+          final isBirthday = counter.counterType == CounterType.birthday;
 
           return AppCard(
-            onTap: () async {
+            onTap: () => context.push('/day-counter/add', extra: counter),
+            onLongPress: () async {
               final confirmed = await AppConfirmDialog.show(
                 context,
                 title: '删除纪念日',
@@ -75,10 +76,31 @@ class DayCounterPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(counter.title,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(counter.title,
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          if (isBirthday)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: colorScheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '生日',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onTertiaryContainer,
+                                    ),
+                              ),
+                            ),
+                        ],
+                      ),
                       Text(
-                        AppDateUtils.formatDisplay(counter.targetDate),
+                        counter.displayDate,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
