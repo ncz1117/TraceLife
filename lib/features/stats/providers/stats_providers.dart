@@ -149,3 +149,39 @@ final streakProvider = FutureProvider<int>((ref) async {
 
 String _formatDate(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// 概览数据 — 设置页用
+class DataSummary {
+  final int totalDiaries;
+  final int totalCounters;
+  final DateTime? firstDiaryDate;
+  final DateTime? latestDiaryDate;
+
+  const DataSummary({
+    required this.totalDiaries,
+    required this.totalCounters,
+    required this.firstDiaryDate,
+    required this.latestDiaryDate,
+  });
+}
+
+final dataSummaryProvider = FutureProvider<DataSummary>((ref) async {
+  final db = DatabaseHelper.instance;
+  // 全部查出来然后聚合（数据量小够用）
+  final allDiaries = await db.query('diaries', orderBy: 'date ASC');
+  final allCounters = await db.query('day_counters');
+
+  DateTime? first;
+  DateTime? latest;
+  if (allDiaries.isNotEmpty) {
+    first = DateTime.parse(allDiaries.first['date'] as String);
+    latest = DateTime.parse(allDiaries.last['date'] as String);
+  }
+
+  return DataSummary(
+    totalDiaries: allDiaries.length,
+    totalCounters: allCounters.length,
+    firstDiaryDate: first,
+    latestDiaryDate: latest,
+  );
+});
