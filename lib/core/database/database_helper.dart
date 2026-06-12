@@ -29,7 +29,7 @@ class DatabaseHelper {
   static Future<Database> _initNative() async {
     final dir = await getDatabasesPath();
     final dbPath = '$dir${Platform.pathSeparator}trace_life.db';
-    return openDatabase(dbPath, version: 4, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
+    return openDatabase(dbPath, version: 5, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
   }
 
   static Future<void> _onCreateNative(Database db, int version) async {
@@ -61,6 +61,12 @@ class DatabaseHelper {
       await db.execute('INSERT INTO diaries_fts(diaries_fts) VALUES(\'rebuild\')');
       await db.execute('INSERT INTO day_counters_fts(day_counters_fts) VALUES(\'rebuild\')');
     }
+    if (oldVersion < 5) {
+      // V3: 日记支持图片（images 字段，\u0001 分隔的多图）
+      await db.execute(
+        'ALTER TABLE diaries ADD COLUMN images TEXT NOT NULL DEFAULT \'\'',
+      );
+    }
   }
 
   // ── Memory DB ──
@@ -77,7 +83,7 @@ class DatabaseHelper {
   // ── DDL ──
 
   static List<String> _tableDDL() => [
-    'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), images TEXT NOT NULL DEFAULT \'\', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
     'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, counter_type INTEGER NOT NULL DEFAULT 0, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',

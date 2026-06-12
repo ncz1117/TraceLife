@@ -25,6 +25,7 @@ mixin _$Diary {
   String get date => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   int get mood => throw _privateConstructorUsedError;
+  List<String> get images => throw _privateConstructorUsedError;
   String? get createdAt => throw _privateConstructorUsedError;
   String? get updatedAt => throw _privateConstructorUsedError;
 
@@ -47,6 +48,7 @@ abstract class $DiaryCopyWith<$Res> {
     String date,
     String content,
     int mood,
+    List<String> images,
     String? createdAt,
     String? updatedAt,
   });
@@ -71,6 +73,7 @@ class _$DiaryCopyWithImpl<$Res, $Val extends Diary>
     Object? date = null,
     Object? content = null,
     Object? mood = null,
+    Object? images = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -92,6 +95,10 @@ class _$DiaryCopyWithImpl<$Res, $Val extends Diary>
                 ? _value.mood
                 : mood // ignore: cast_nullable_to_non_nullable
                       as int,
+            images: null == images
+                ? _value.images
+                : images // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -119,6 +126,7 @@ abstract class _$$DiaryImplCopyWith<$Res> implements $DiaryCopyWith<$Res> {
     String date,
     String content,
     int mood,
+    List<String> images,
     String? createdAt,
     String? updatedAt,
   });
@@ -142,6 +150,7 @@ class __$$DiaryImplCopyWithImpl<$Res>
     Object? date = null,
     Object? content = null,
     Object? mood = null,
+    Object? images = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -163,6 +172,10 @@ class __$$DiaryImplCopyWithImpl<$Res>
             ? _value.mood
             : mood // ignore: cast_nullable_to_non_nullable
                   as int,
+        images: null == images
+            ? _value._images
+            : images // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -184,9 +197,11 @@ class _$DiaryImpl extends _Diary {
     required this.date,
     this.content = '',
     this.mood = 3,
+    final List<String> images = const <String>[],
     this.createdAt,
     this.updatedAt,
-  }) : super._();
+  }) : _images = images,
+       super._();
 
   factory _$DiaryImpl.fromJson(Map<String, dynamic> json) =>
       _$$DiaryImplFromJson(json);
@@ -201,6 +216,15 @@ class _$DiaryImpl extends _Diary {
   @override
   @JsonKey()
   final int mood;
+  final List<String> _images;
+  @override
+  @JsonKey()
+  List<String> get images {
+    if (_images is EqualUnmodifiableListView) return _images;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_images);
+  }
+
   @override
   final String? createdAt;
   @override
@@ -208,7 +232,7 @@ class _$DiaryImpl extends _Diary {
 
   @override
   String toString() {
-    return 'Diary(id: $id, date: $date, content: $content, mood: $mood, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Diary(id: $id, date: $date, content: $content, mood: $mood, images: $images, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -220,6 +244,7 @@ class _$DiaryImpl extends _Diary {
             (identical(other.date, date) || other.date == date) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.mood, mood) || other.mood == mood) &&
+            const DeepCollectionEquality().equals(other._images, _images) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -228,8 +253,16 @@ class _$DiaryImpl extends _Diary {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, date, content, mood, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    date,
+    content,
+    mood,
+    const DeepCollectionEquality().hash(_images),
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of Diary
   /// with the given fields replaced by the non-null parameter values.
@@ -251,6 +284,7 @@ abstract class _Diary extends Diary {
     required final String date,
     final String content,
     final int mood,
+    final List<String> images,
     final String? createdAt,
     final String? updatedAt,
   }) = _$DiaryImpl;
@@ -266,6 +300,8 @@ abstract class _Diary extends Diary {
   String get content;
   @override
   int get mood;
+  @override
+  List<String> get images;
   @override
   String? get createdAt;
   @override
