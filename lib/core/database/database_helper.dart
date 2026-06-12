@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// 跨平台数据库抽象层
-/// - Native (Android/iOS): 使用 sqflite SQLite
+/// - Native (Android/iOS): 使用 sqflite SQLite + FTS5 全文索引
 /// - Web: 使用内存 Map（开发调试，不持久化）
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
@@ -29,11 +29,11 @@ class DatabaseHelper {
   static Future<Database> _initNative() async {
     final dir = await getDatabasesPath();
     final dbPath = '$dir${Platform.pathSeparator}trace_life.db';
-    return openDatabase(dbPath, version: 3, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
+    return openDatabase(dbPath, version: 4, onCreate: _onCreateNative, onUpgrade: _onUpgradeNative);
   }
 
   static Future<void> _onCreateNative(Database db, int version) async {
-    for (final sql in _tableDDL(version)) {
+    for (final sql in _tableDDL()) {
       await db.execute(sql);
     }
   }
@@ -52,6 +52,15 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE diaries_new RENAME TO diaries');
       await db.execute('CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)');
     }
+    if (oldVersion < 4) {
+      // V2: FTS5 全文索引
+      for (final sql in _ftsDDL()) {
+        await db.execute(sql);
+      }
+      // 重建初始索引
+      await db.execute('INSERT INTO diaries_fts(diaries_fts) VALUES(\'rebuild\')');
+      await db.execute('INSERT INTO day_counters_fts(day_counters_fts) VALUES(\'rebuild\')');
+    }
   }
 
   // ── Memory DB ──
@@ -67,11 +76,25 @@ class DatabaseHelper {
 
   // ── DDL ──
 
-  static List<String> _tableDDL(int version) => [
+  static List<String> _tableDDL() => [
     'CREATE TABLE IF NOT EXISTS diaries (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL DEFAULT \'\', mood INTEGER NOT NULL DEFAULT 3 CHECK(mood >= 1 AND mood <= 5), created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_diaries_date ON diaries(date)',
     'CREATE TABLE IF NOT EXISTS day_counters (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, target_date TEXT NOT NULL, counter_type INTEGER NOT NULL DEFAULT 0, emoji TEXT NOT NULL DEFAULT \'📅\', color_index INTEGER NOT NULL DEFAULT 0, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)',
     'CREATE INDEX IF NOT EXISTS idx_day_counters_date ON day_counters(target_date)',
+  ];
+
+  static List<String> _ftsDDL() => [
+    // FTS5 虚拟表
+    'CREATE VIRTUAL TABLE IF NOT EXISTS diaries_fts USING fts5(content, content=\'diaries\', content_rowid=\'id\')',
+    'CREATE VIRTUAL TABLE IF NOT EXISTS day_counters_fts USING fts5(title, content=\'day_counters\', content_rowid=\'id\')',
+    // 同步触发器 — diaries
+    'CREATE TRIGGER IF NOT EXISTS diaries_ai AFTER INSERT ON diaries BEGIN INSERT INTO diaries_fts(rowid, content) VALUES (NEW.id, NEW.content); END',
+    'CREATE TRIGGER IF NOT EXISTS diaries_ad AFTER DELETE ON diaries BEGIN INSERT INTO diaries_fts(diaries_fts, rowid, content) VALUES(\'delete\', OLD.id, OLD.content); END',
+    'CREATE TRIGGER IF NOT EXISTS diaries_au AFTER UPDATE ON diaries BEGIN INSERT INTO diaries_fts(diaries_fts, rowid, content) VALUES(\'delete\', OLD.id, OLD.content); INSERT INTO diaries_fts(rowid, content) VALUES (NEW.id, NEW.content); END',
+    // 同步触发器 — day_counters
+    'CREATE TRIGGER IF NOT EXISTS day_counters_ai AFTER INSERT ON day_counters BEGIN INSERT INTO day_counters_fts(rowid, title) VALUES (NEW.id, NEW.title); END',
+    'CREATE TRIGGER IF NOT EXISTS day_counters_ad AFTER DELETE ON day_counters BEGIN INSERT INTO day_counters_fts(day_counters_fts, rowid, title) VALUES(\'delete\', OLD.id, OLD.title); END',
+    'CREATE TRIGGER IF NOT EXISTS day_counters_au AFTER UPDATE ON day_counters BEGIN INSERT INTO day_counters_fts(day_counters_fts, rowid, title) VALUES(\'delete\', OLD.id, OLD.title); INSERT INTO day_counters_fts(rowid, title) VALUES (NEW.id, NEW.title); END',
   ];
 
   // ── Public API ──
@@ -104,6 +127,31 @@ class DatabaseHelper {
   Future<int> delete(String table, {String? where, List<Object?>? whereArgs}) async {
     if (_isWeb) return _memoryDelete(table, where: where, whereArgs: whereArgs);
     return _nativeDb!.delete(table, where: where, whereArgs: whereArgs);
+  }
+
+  /// 全文搜索
+  /// - Native: FTS5 MATCH
+  /// - Web: 内存 contains
+  Future<List<Map<String, dynamic>>> search(String table, String keyword) async {
+    if (keyword.trim().isEmpty) return [];
+    if (_isWeb) {
+      return _memorySearch(table, keyword);
+    }
+    final ftsTable = '${table}_fts';
+    // 拼接搜索词：支持空格分词
+    final tokens = keyword.trim().split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .map((t) => '"$t"*')  // 前缀匹配
+        .join(' ');
+    if (tokens.isEmpty) return [];
+    // 通过 FTS 拿 rowid，再 JOIN 原表取完整数据
+    return _nativeDb!.rawQuery('''
+      SELECT t.* FROM $table t
+      INNER JOIN $ftsTable fts ON fts.rowid = t.id
+      WHERE $ftsTable MATCH ?
+      ORDER BY t.id DESC
+      LIMIT 100
+    ''', [tokens]);
   }
 
   // ── Memory Implementation ──
@@ -167,6 +215,21 @@ class DatabaseHelper {
     final toRemove = _memoryQuery(table, where: where, whereArgs: whereArgs);
     _memoryDb[table]!.removeWhere((r) => toRemove.contains(r));
     return before - _memoryDb[table]!.length;
+  }
+
+  /// 内存版简单搜索 — 对 content/title 字段做 contains
+  List<Map<String, dynamic>> _memorySearch(String table, String keyword) {
+    final lower = keyword.toLowerCase();
+    final tokens = lower.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    if (tokens.isEmpty) return [];
+    final field = table == 'diaries' ? 'content' : 'title';
+    final rows = _memoryDb[table] ?? [];
+    final matched = rows.where((r) {
+      final value = (r[field] as String? ?? '').toLowerCase();
+      return tokens.every((t) => value.contains(t));
+    }).toList();
+    matched.sort((a, b) => (b['id'] as int).compareTo(a['id'] as int));
+    return matched.take(100).toList();
   }
 
   Future<void> close() async {

@@ -7,6 +7,7 @@ import '../../features/diary/diary_edit_page.dart';
 import '../../features/day_counter/day_counter_add_page.dart';
 import '../../features/day_counter/model/day_counter.dart';
 import '../../features/settings/settings_page.dart';
+import '../../features/search/search_page.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -42,6 +43,11 @@ final appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/search',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const SearchPage(),
     ),
     GoRoute(
       path: '/diary/edit',

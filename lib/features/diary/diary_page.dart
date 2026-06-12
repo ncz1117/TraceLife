@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'model/diary.dart';
 import 'providers/diary_providers.dart';
+import '../../core/theme/app_spacing.dart';
 
 class DiaryPage extends ConsumerStatefulWidget {
   const DiaryPage({super.key});
@@ -35,6 +36,42 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
 
     return Column(
       children: [
+        // 顶部栏 — 月份切换 + 搜索
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
+                  });
+                },
+              ),
+              Expanded(
+                child: Text(
+                  '${_focusedDay.year}年${_focusedDay.month}月',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () {
+                  setState(() {
+                    _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: '搜索',
+                onPressed: () => context.push('/search'),
+              ),
+            ],
+          ),
+        ),
         TableCalendar(
           firstDay: DateTime(2020),
           lastDay: DateTime(2030),
