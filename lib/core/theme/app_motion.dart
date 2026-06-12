@@ -49,15 +49,15 @@ AnimationController createMotionController({
 }
 
 /// 通用缩放/透明度 Pulse widget
-/// - 静默时长（hold time）= duration 的 1 倍
-/// - 缩放范围 1.0 -> 1.05 -> 1.0
-/// - 慢节奏 0.4-0.5 Hz（避免焦虑感）
+/// - 默认：对称呼吸（easeInOut, 1.0 ↔ maxScale）
+/// - heartbeat: 非对称（30% 收缩 + 70% 舒张，模拟真实心率）
 /// - reduced-motion 下直接返回 child 不动
 class Pulse extends StatefulWidget {
   final Widget child;
   final double maxScale;
   final Duration period;
   final bool enabled;
+  final bool heartbeat;
 
   const Pulse({
     super.key,
@@ -65,6 +65,7 @@ class Pulse extends StatefulWidget {
     this.maxScale = 1.05,
     this.period = const Duration(milliseconds: 2400),
     this.enabled = true,
+    this.heartbeat = false,
   });
 
   @override
@@ -74,6 +75,7 @@ class Pulse extends StatefulWidget {
 class _PulseState extends State<Pulse>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
+  late final Animation<double> _scale;
 
   @override
   void initState() {
@@ -82,8 +84,25 @@ class _PulseState extends State<Pulse>
       duration: widget.period,
       vsync: this,
     );
+    _scale = widget.heartbeat
+        ? TweenSequence<double>([
+            // 收缩：1.0 → maxScale，30% 周期，easeOut（快入）
+            TweenSequenceItem(
+              tween: Tween(begin: 1.0, end: widget.maxScale)
+                  .chain(CurveTween(curve: Curves.easeOut)),
+              weight: 30,
+            ),
+            // 舒张：maxScale → 1.0，70% 周期，easeInOut（慢出）
+            TweenSequenceItem(
+              tween: Tween(begin: widget.maxScale, end: 1.0)
+                  .chain(CurveTween(curve: Curves.easeInOut)),
+              weight: 70,
+            ),
+          ]).animate(_ctrl)
+        : Tween<double>(begin: 1.0, end: widget.maxScale)
+            .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     if (widget.enabled && !_prefersReducedMotion(context)) {
-      _ctrl.repeat(reverse: true);
+      _ctrl.repeat();
     }
   }
 
@@ -92,7 +111,7 @@ class _PulseState extends State<Pulse>
     super.didUpdateWidget(old);
     if (widget.enabled != old.enabled) {
       if (widget.enabled && !_prefersReducedMotion(context)) {
-        _ctrl.repeat(reverse: true);
+        _ctrl.repeat();
       } else {
         _ctrl.stop();
       }
@@ -109,9 +128,7 @@ class _PulseState extends State<Pulse>
   Widget build(BuildContext context) {
     if (_prefersReducedMotion(context)) return widget.child;
     return ScaleTransition(
-      scale: Tween<double>(begin: 1.0, end: widget.maxScale).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-      ),
+      scale: _scale,
       child: widget.child,
     );
   }

@@ -244,14 +244,15 @@ class _BigNumber extends StatelessWidget {
         ? _onImageColor
         : Theme.of(context).colorScheme.onPrimary;
 
-    return Pulse(
-      // 极慢心跳 2.4s 一次 → 生命感，不焦虑
-      maxScale: 1.02,
-      period: const Duration(milliseconds: 2400),
-      child: Column(
-        children: [
-          // 大数字
-          Text(
+    return Column(
+      children: [
+        // 大数字（独立心跳：只它自己跳，"天"和状态标签保持静止）
+        Pulse(
+          // 心跳曲线：30% 收缩（快入）+ 70% 舒张（慢出），模拟真实心率
+          heartbeat: true,
+          maxScale: 1.03, // 1.5px 移动（避免 1.02 的亚像素抖动）
+          period: const Duration(milliseconds: 1800), // 0.55Hz 接近静息心率
+          child: Text(
             '$days',
             style: context.textStyles.heroNumber.copyWith(
               color: color,
@@ -266,47 +267,46 @@ class _BigNumber extends StatelessWidget {
                   : null,
             ),
           ),
-          const SizedBox(height: 8),
-          // 「天」+ 状态标签
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '天',
-                style: context.textStyles.memorialDay.copyWith(
+        ),
+        const SizedBox(height: 8),
+        // 「天」+ 状态标签
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              '天',
+              style: context.textStyles.memorialDay.copyWith(
+                color: hasImage
+                    ? _onImageColor
+                    : Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: hasImage
+                    ? _onImageColor.withValues(alpha: 0.2)
+                    : Theme.of(context)
+                        .colorScheme
+                        .onPrimary
+                        .withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                days == 0 ? '今天' : label,
+                style: context.textTheme.labelSmall?.copyWith(
                   color: hasImage
                       ? _onImageColor
                       : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: hasImage
-                      ? _onImageColor.withValues(alpha: 0.2)
-                      : Theme.of(context)
-                          .colorScheme
-                          .onPrimary
-                          .withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  days == 0 ? '今天' : label,
-                  style: context.textTheme.labelSmall?.copyWith(
-                    color: hasImage
-                        ? _onImageColor
-                        : Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
