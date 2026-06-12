@@ -24,6 +24,7 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final monthDiariesAsync = ref.watch(diariesByMonthProvider({
       'year': _focusedDay.year,
       'month': _focusedDay.month,
@@ -80,6 +81,19 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
           calendarFormat: _calendarFormat,
           // 隐藏 TableCalendar 自带头部（自定义行在上面已经有了月份切换+搜索）
           headerVisible: false,
+          // 周几标签高度（默认 16 太矮，标签被截）
+          daysOfWeekHeight: 24,
+          rowHeight: 52,
+          daysOfWeekStyle: DaysOfWeekStyle(
+            weekdayStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+            weekendStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           onFormatChanged: (format) {
             setState(() => _calendarFormat = format);
           },
