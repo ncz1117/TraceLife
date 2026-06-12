@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert' show base64Decode;
 import 'dart:io' show File;
-import 'model/day_counter.dart';
-import 'providers/day_counter_providers.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/services/image_service.dart';
 import '../../shared/extensions/context_extensions.dart';
+import 'model/day_counter.dart';
+import 'providers/day_counter_providers.dart';
 
 /// 纪念日查看页（封面图风格 — Days Matter 范本）
 /// 信息层级：顶部标题 / 中央大数字 / 底部起始日
@@ -242,64 +244,69 @@ class _BigNumber extends StatelessWidget {
         ? _onImageColor
         : Theme.of(context).colorScheme.onPrimary;
 
-    return Column(
-      children: [
-        // 大数字
-        Text(
-          '$days',
-          style: context.textStyles.heroNumber.copyWith(
-            color: color,
-            shadows: hasImage
-                ? [
-                    // scrim-based shadow，替代 Colors.black54
-                    Shadow(
-                      color: context.appColors.scrim.withValues(alpha: 0.54),
-                      blurRadius: 12,
-                    ),
-                  ]
-                : null,
-          ),
-        ),
-        const SizedBox(height: 8),
-        // 「天」+ 状态标签
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              '天',
-              style: context.textStyles.memorialDay.copyWith(
-                color: hasImage
-                    ? _onImageColor
-                    : Theme.of(context).colorScheme.onPrimary,
-              ),
+    return Pulse(
+      // 极慢心跳 2.4s 一次 → 生命感，不焦虑
+      maxScale: 1.02,
+      period: const Duration(milliseconds: 2400),
+      child: Column(
+        children: [
+          // 大数字
+          Text(
+            '$days',
+            style: context.textStyles.heroNumber.copyWith(
+              color: color,
+              shadows: hasImage
+                  ? [
+                      // scrim-based shadow，替代 Colors.black54
+                      Shadow(
+                        color: context.appColors.scrim.withValues(alpha: 0.54),
+                        blurRadius: 12,
+                      ),
+                    ]
+                  : null,
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: hasImage
-                    ? _onImageColor.withValues(alpha: 0.2)
-                    : Theme.of(context)
-                        .colorScheme
-                        .onPrimary
-                        .withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                days == 0 ? '今天' : label,
-                style: context.textTheme.labelSmall?.copyWith(
+          ),
+          const SizedBox(height: 8),
+          // 「天」+ 状态标签
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '天',
+                style: context.textStyles.memorialDay.copyWith(
                   color: hasImage
                       ? _onImageColor
                       : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: hasImage
+                      ? _onImageColor.withValues(alpha: 0.2)
+                      : Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  days == 0 ? '今天' : label,
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: hasImage
+                        ? _onImageColor
+                        : Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

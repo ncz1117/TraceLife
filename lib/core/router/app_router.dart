@@ -10,6 +10,7 @@ import '../../features/day_counter/model/day_counter.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/search/search_page.dart';
 import '../../features/stats/stats_page.dart';
+import '../theme/app_motion.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -20,6 +21,7 @@ final appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
+        // 底部 Tab 切换：NoTransitionPage（无动画，秒切）
         GoRoute(
           path: '/',
           pageBuilder: (context, state) => const NoTransitionPage(
@@ -46,35 +48,60 @@ final appRouter = GoRouter(
         ),
       ],
     ),
+    // 详情页：自定义 fade+slide 过渡（300ms）
     GoRoute(
       path: '/search',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const SearchPage(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const SearchPage(),
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.quick,
+        transitionsBuilder: buildRouteTransition,
+      ),
     ),
     GoRoute(
       path: '/stats',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const StatsPage(),
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: const StatsPage(),
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.quick,
+        transitionsBuilder: buildRouteTransition,
+      ),
     ),
     GoRoute(
       path: '/diary/edit',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => DiaryEditPage(
-        extra: state.extra,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: DiaryEditPage(extra: state.extra),
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.quick,
+        transitionsBuilder: buildRouteTransition,
       ),
     ),
     GoRoute(
       path: '/day-counter/add',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => DayCounterAddPage(
-        counter: state.extra as DayCounter?,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: DayCounterAddPage(counter: state.extra as DayCounter?),
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.quick,
+        transitionsBuilder: buildRouteTransition,
       ),
     ),
     GoRoute(
       path: '/day-counter/view',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => DayCounterViewPage(
-        counterId: state.extra as int,
+      pageBuilder: (context, state) => CustomTransitionPage(
+        key: state.pageKey,
+        child: DayCounterViewPage(counterId: state.extra as int),
+        transitionDuration: AppMotion.normal,
+        reverseTransitionDuration: AppMotion.quick,
+        transitionsBuilder: buildRouteTransition,
       ),
     ),
   ],
