@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_spacing.dart';
 
 class AppScaffold extends StatelessWidget {
@@ -51,10 +52,23 @@ class AppScaffold extends StatelessWidget {
                     : null,
               )
             : null,
+        // body: SafeArea > LayoutBuilder > Center+ConstrainedBox(contentMaxWidth) > Padding > body
+        // 宽屏（>= 840）自动居中 + 限宽 720
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: body,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: AppLayout.contentMaxWidth(constraints.maxWidth),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: body,
+                  ),
+                ),
+              );
+            },
           ),
         ),
         bottomNavigationBar: bottomNavigationBar,

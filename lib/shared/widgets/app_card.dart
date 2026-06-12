@@ -22,7 +22,7 @@ class AppCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
           child: Padding(
             padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
             child: child,
