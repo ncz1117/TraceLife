@@ -65,35 +65,34 @@
 
 ## Typography
 
-### 字体家族（单家族多 weight）
+### 字体家族（混排策略）
 
-> 不引入第二字体。中文走 Noto 系列，英文用同一族的拉丁子集。
+> **V3 typeset 决定**：候选 2（衬线大数字 + sans 标题 + sans 正文，杂志感）。
+> - 大数字（纪念日 / 统计大值）：**Noto Serif SC**（衬线，有时间感、文学感）
+> - 标题 / 正文：**Noto Sans SC**（无衬线，易读）
+> - 单家族多 weight；不引入第三字体（克制）
 
 | 角色 | 字体 | 备选 |
 |------|------|------|
-| 标题 + 正文 | **Noto Sans SC** | Noto Serif SC（衬线场景，V3 决定） |
+| 标题 + 正文 | **Noto Sans SC** | — |
+| 数字显示 + 衬线场景 | **Noto Serif SC** | Playfair Display（仅英文场景）|
 | 数字显示 | Noto Sans SC Tabular | — |
 
-> **决策推迟到 V3 typeset 命令**：是否要"标题用衬线（Noto Serif SC / Playfair Display）+ 正文用无衬线（Noto Sans SC）"的混排？
-> 候选 1：全 sans（克制、技术感）
-> 候选 2：衬线大数字 + sans 标题 + sans 正文（杂志感）
-> 候选 3：衬线标题 + sans 正文（编辑感）
-> 
-> V3 启动 typeset 时决定。
+### Type Scale（9 档 + 数字专用）
 
-### Type Scale（5 档 + 数字专用）
-
-| Token | rem | 用途 |
+| Token | sp | 用途 |
 |-------|-----|------|
-| `text-caption` | 0.75 | 提示、辅助 |
-| `text-body-sm` | 0.875 | 次要 UI |
-| `text-body` | 1.0 | 正文 |
-| `text-subheading` | 1.25 | 副标题 |
-| `text-heading` | 1.5 | 标题 |
-| `text-display` | 2.0 | 页面大标题 |
-| `text-number-display` | 5-6 | 纪念日大数字 |
+| `text-caption` | 11 | 提示、辅助 |
+| `text-body-sm` | 12 | 次要 UI |
+| `text-body` | 14 | 正文 |
+| `text-subheading` | 16 | 副标题 |
+| `text-heading` | 20 | 标题 |
+| `text-display` | 28 | 页面大标题 |
+| `text-hero` | 36 | Hero 区 |
+| `text-number-display` | 100 | 纪念日大数字 |
+| `text-stat-large` | 48 | 统计大值 |
 
-**比例**：1.25（major third）
+**比例**：1.25（major third），hero/number-display 单独特例
 
 ### 字重（限制 3 档）
 
@@ -101,7 +100,7 @@
 |------|--------|
 | 正文 | 400 (Regular) |
 | 副标题/按钮 | 500 (Medium) |
-| 标题 | 700 (Bold) |
+| 标题/强调 | 700 (Bold) |
 | 数字显示 | 900 (Black) |
 
 ### 行高 / 字距
@@ -299,23 +298,23 @@ font-display: swap
 
 ```
 lib/core/theme/
-├── app_theme.dart            # 主题入口
-├── app_colors.dart           # 颜色 token（4 套主题）
-├── app_typography.dart       # 字体 + 字号 + 字重
-├── app_spacing.dart          # 间距 token
-├── app_radii.dart            # 圆角 token
-├── app_shadows.dart          # 阴影 token
-├── app_motion.dart           # 动效 token
-└── presets/
-    ├── default_theme.dart    # 默认青
-    ├── warm_theme.dart       # 暖橙
-    ├── pink_theme.dart       # 樱粉
-    └── dark_theme.dart       # 暗夜紫
+├── app_theme.dart            # 主题入口（8 套 ThemeData 工厂）
+├── app_colors.dart           # 颜色 extension（心情/scrim/onImage 等）
+├── app_typography.dart       # 字体 + 字号 + 字重（9 档 scale + 3 weight）
+├── app_spacing.dart          # 间距 token（12 档）
+├── app_layout.dart           # 布局 token（4 档断点 + 6 档 radius + contentMaxWidth）
+├── app_motion.dart           # 动效 token（6 档时长 + Pulse widget + 路由过场）
+└── theme_presets.dart        # 4 套主题预设元数据（默/暮/雾/樱）
 ```
+
+> **V3 实施后的命名约定调整**：
+> - `app_radii.dart` / `app_shadows.dart` 合并到 `app_layout.dart`（radius 属于布局，shadow 留空未实装）
+> - `presets/*.dart` 拆 4 个文件 → 合并为 `theme_presets.dart` 单 enum（避免 4 个文件）
+> - `app_motion.dart` 提升为一级 token 文件（含 Pulse widget 和 buildRouteTransition）
 
 ---
 
 *创建日期：2026-07-12*
 *来源：Impeccable init 命令 + PRODUCT.md 战略方向*
-*版本：V3 设计基线 v1.0*
-*下一步：typeset / colorize / animate 命令细化各章节*
+*版本：V3 设计基线 v2.0（V3 实施后回填）*
+*状态：V3 完成 ✅，4 主题 / 真实心率脉动 / 响应式 / 无障碍 全部交付*
