@@ -132,7 +132,7 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
     return AppScaffold(
       title: AppDateUtils.formatDisplay(_dateStr),
       showBack: true,
-      onWillPop: _hasUnsavedChanges ? onWillPop : null,
+      onWillPop: onWillPop,
       actions: [
         if (isEdit)
           IconButton(
