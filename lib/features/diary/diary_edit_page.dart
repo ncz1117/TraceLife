@@ -9,6 +9,8 @@ import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/date_utils.dart';
 import '../today/providers/today_providers.dart';
+import '../stats/providers/stats_providers.dart';
+import '../search/providers/search_providers.dart';
 import 'providers/diary_providers.dart';
 
 /// extra: String 日期 → 新建；int id → 编辑已有
@@ -76,6 +78,10 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
       ref.invalidate(diaryListProvider);
       ref.invalidate(diariesByMonthProvider);
       ref.invalidate(diariesByDateProvider(_dateStr));
+      ref.invalidate(monthStatsProvider);
+      ref.invalidate(moodTrendProvider);
+      ref.invalidate(streakProvider);
+      ref.invalidate(searchResultsProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('日记已保存')),
       );
@@ -97,6 +103,10 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
         ref.invalidate(diaryListProvider);
         ref.invalidate(diariesByMonthProvider);
         ref.invalidate(diariesByDateProvider(_dateStr));
+        ref.invalidate(monthStatsProvider);
+        ref.invalidate(moodTrendProvider);
+        ref.invalidate(streakProvider);
+        ref.invalidate(searchResultsProvider);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('日记已删除')),
         );
