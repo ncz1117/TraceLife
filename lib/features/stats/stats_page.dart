@@ -101,32 +101,34 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 // 3 小卡（不等宽，width 1.1 : 1 : 1.1 让中间窄一点打破节奏）
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 11,
-                      child: _SmallStatCard(
-                        label: '平均心情',
-                        value: stats.avgMood != null
-                            ? stats.avgMood!.toStringAsFixed(1)
-                            : '—',
-                        icon: Icons.mood_rounded,
-                        color: appColors.moodHappy,
+                // IntrinsicHeight 让 3 张卡按最高那张对齐
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 11,
+                        child: _SmallStatCard(
+                          label: '平均心情',
+                          value: stats.avgMood != null
+                              ? stats.avgMood!.toStringAsFixed(1)
+                              : '—',
+                          icon: Icons.mood_rounded,
+                          color: appColors.moodHappy,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      flex: 10,
-                      child: _SmallStatCard(
-                        label: '总字数',
-                        value: _formatCount(stats.totalWords),
-                        icon: Icons.text_fields_rounded,
-                        color: appColors.info,
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        flex: 10,
+                        child: _SmallStatCard(
+                          label: '总字数',
+                          value: _formatCount(stats.totalWords),
+                          icon: Icons.text_fields_rounded,
+                          color: appColors.info,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
                       flex: 11,
                       child: streakAsync.when(
                         data: (streak) => _SmallStatCard(
@@ -148,6 +150,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       ),
                     ),
                   ],
+                  ),
                 ),
               ],
             ),
