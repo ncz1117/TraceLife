@@ -6,6 +6,7 @@ import 'providers/day_counter_providers.dart';
 import 'repository/day_counter_repository_impl.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_section_header.dart';
+import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
 import '../today/providers/today_providers.dart';
 
@@ -24,6 +25,33 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   String _selectedEmoji = '🎉';
   int _counterType = CounterType.countdown;
   bool get _isEdit => widget.counter != null;
+
+  // 初始值，用于判断是否有未保存修改
+  String _initialTitle = '';
+  DateTime _initialDate = DateTime.now();
+  String _initialEmoji = '🎉';
+  int _initialType = CounterType.countdown;
+
+  bool get _hasUnsavedChanges {
+    if (_counterType != _initialType) return true;
+    if (_selectedEmoji != _initialEmoji) return true;
+    if (_titleController.text != _initialTitle) return true;
+    // 日期比较（仅年月日）
+    if (_selectedDate.year != _initialDate.year ||
+        _selectedDate.month != _initialDate.month ||
+        _selectedDate.day != _initialDate.day) return true;
+    return false;
+  }
+
+  Future<bool> onWillPop() async {
+    if (!_hasUnsavedChanges) return true;
+    final confirmed = await AppConfirmDialog.show(
+      context,
+      title: '放弃修改？',
+      message: '你有未保存的修改，确定要离开吗？',
+    );
+    return confirmed;
+  }
 
   static const _emojis = [
     '🎉', '❤️', '⭐', '🔥', '🎂', '🎄', '🌈', '🌟',
@@ -48,6 +76,11 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
         _selectedDate = DateTime(DateTime.now().year, month, day);
       }
     }
+    // 保存初始值
+    _initialTitle = _titleController.text;
+    _initialDate = _selectedDate;
+    _initialEmoji = _selectedEmoji;
+    _initialType = _counterType;
   }
 
   Future<void> _save() async {
@@ -91,6 +124,7 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
     return AppScaffold(
       title: _isEdit ? '编辑纪念日' : '添加纪念日',
       showBack: true,
+      onWillPop: onWillPop,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
