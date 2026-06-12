@@ -53,10 +53,14 @@ class DayCounterPage extends ConsumerWidget {
           final isBirthday = counter.counterType == CounterType.birthday;
           final hasImage = counter.image.isNotEmpty;
 
-          return AppCard(
-            onTap: () => context.push('/day-counter/view', extra: counter.id),
-            onLongPress: () => _showActions(context, ref, counter),
-            child: Row(
+          return Semantics(
+            button: true,
+            label: '${counter.title}，${counter.isFuture ? "还有" : "已经"}${days.abs()}天'
+                '${isBirthday ? "，生日" : ""}',
+            child: AppCard(
+              onTap: () => context.push('/day-counter/view', extra: counter.id),
+              onLongPress: () => _showActions(context, ref, counter),
+              child: Row(
               children: [
                 // 封面缩略图或 emoji
                 if (hasImage)
@@ -123,6 +127,7 @@ class DayCounterPage extends ConsumerWidget {
                   ],
                 ),
               ],
+            ),
             ),
           );
         },

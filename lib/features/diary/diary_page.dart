@@ -122,7 +122,18 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
           child: selectedDiariesAsync.when(
             data: (diaries) => _buildDiaryList(context, diaries),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => _emptyDay(context),
+            error: (e, _) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: 8),
+                  Text('加载失败：$e',
+                      style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
           ),
         ),
       ],

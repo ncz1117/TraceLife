@@ -31,6 +31,7 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   String _selectedEmoji = '🎉';
   int _counterType = CounterType.countdown;
   String _image = ''; // 封面图路径或 data URI
+  String? _titleError; // 表单错误态
   bool get _isEdit => widget.counter != null;
 
   // 初始值，用于判断是否有未保存修改
@@ -92,7 +93,10 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   }
 
   Future<void> _save() async {
-    if (_titleController.text.trim().isEmpty) return;
+    if (_titleController.text.trim().isEmpty) {
+      setState(() => _titleError = '请输入事件名称');
+      return;
+    }
     String targetDate;
     if (_counterType == CounterType.birthday) {
       targetDate =
@@ -201,11 +205,17 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
         children: [
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '事件名称',
               hintText: '例如：认识你',
+              errorText: _titleError,
             ),
             autofocus: true,
+            onChanged: (_) {
+              if (_titleError != null) {
+                setState(() => _titleError = null);
+              }
+            },
           ),
           const SizedBox(height: AppSpacing.md),
 

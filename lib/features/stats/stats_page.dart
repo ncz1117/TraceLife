@@ -226,13 +226,16 @@ class _HeadlineStatCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  '$count',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                        height: 1.0,
-                      ),
+                Semantics(
+                  label: '本月已写日记 $count 篇',
+                  child: Text(
+                    '$count',
+                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                          height: 1.0,
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(

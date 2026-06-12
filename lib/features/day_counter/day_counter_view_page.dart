@@ -374,15 +374,18 @@ class _CircleIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       child: Material(
         color: context.appColors.scrim.withValues(alpha: 0.35),
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
+          // 触控目标 ≥ 48px（WCAG AAA）
+          child: Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
             child: Icon(icon, color: _onImageColor, size: 22),
           ),
         ),
