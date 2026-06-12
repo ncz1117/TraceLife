@@ -11,6 +11,7 @@ import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/services/image_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../shared/extensions/context_extensions.dart';
 import '../../core/theme/app_spacing.dart';
 
 class DayCounterPage extends ConsumerWidget {
@@ -149,8 +150,8 @@ class DayCounterPage extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('删除', style: TextStyle(color: Colors.red)),
+              leading: Icon(Icons.delete_outline, color: context.appColors.danger),
+              title: Text('删除', style: TextStyle(color: context.appColors.danger)),
               onTap: () async {
                 Navigator.pop(ctx);
                 final confirmed = await AppConfirmDialog.show(

@@ -13,6 +13,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/services/image_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/providers/notification_providers.dart';
+import '../../shared/extensions/context_extensions.dart';
 import '../today/providers/today_providers.dart';
 
 class DayCounterAddPage extends ConsumerStatefulWidget {
@@ -149,8 +150,8 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
             ),
             if (_image.isNotEmpty)
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('移除封面图', style: TextStyle(color: Colors.red)),
+                leading: Icon(Icons.delete_outline, color: context.appColors.danger),
+                title: Text('移除封面图', style: TextStyle(color: context.appColors.danger)),
                 onTap: () => Navigator.pop(ctx, null),
               ),
           ],
@@ -317,7 +318,8 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.black54,
+                                color: context.appColors.scrim
+                                    .withValues(alpha: 0.54),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Text(

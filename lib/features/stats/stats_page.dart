@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/stats_providers.dart';
 import '../../shared/widgets/app_scaffold.dart';
+import '../../shared/extensions/context_extensions.dart';
 import '../../core/theme/app_spacing.dart';
 
 class StatsPage extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
     final trendAsync = ref.watch(moodTrendProvider);
     final monthAsync = ref.watch(monthStatsProvider(_selectedMonth));
     final streakAsync = ref.watch(streakProvider);
@@ -82,7 +84,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // 概览卡片
+          // 概览区（重做：1 大 + 3 小，打破 4 等分 SaaS 模板）
           Text('本月概览',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colorScheme.primary,
@@ -91,49 +93,59 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           monthAsync.when(
             data: (stats) => Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(child: _StatCard(
-                      label: '日记篇数',
-                      value: '${stats.diaryCount}',
-                      icon: Icons.book_rounded,
-                      color: colorScheme.primary,
-                    )),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: _StatCard(
-                      label: '平均心情',
-                      value: stats.avgMood != null
-                          ? stats.avgMood!.toStringAsFixed(1)
-                          : '—',
-                      icon: Icons.mood_rounded,
-                      color: const Color(0xFFFFB74D),
-                    )),
-                  ],
+                // 1 大卡：核心指标 + 一句话洞察
+                _HeadlineStatCard(
+                  stats: stats,
+                  color: colorScheme.primary,
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                // 3 小卡（不等宽，width 1.1 : 1 : 1.1 让中间窄一点打破节奏）
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _StatCard(
-                      label: '总字数',
-                      value: '${stats.totalWords}',
-                      icon: Icons.text_fields_rounded,
-                      color: const Color(0xFF66BB6A),
-                    )),
+                    Expanded(
+                      flex: 11,
+                      child: _SmallStatCard(
+                        label: '平均心情',
+                        value: stats.avgMood != null
+                            ? stats.avgMood!.toStringAsFixed(1)
+                            : '—',
+                        icon: Icons.mood_rounded,
+                        color: appColors.moodHappy,
+                      ),
+                    ),
                     const SizedBox(width: AppSpacing.sm),
-                    Expanded(child: streakAsync.when(
-                      data: (streak) => _StatCard(
-                        label: '连续天数',
-                        value: '$streak',
-                        icon: Icons.local_fire_department_rounded,
-                        color: const Color(0xFFEF5350),
+                    Expanded(
+                      flex: 10,
+                      child: _SmallStatCard(
+                        label: '总字数',
+                        value: _formatCount(stats.totalWords),
+                        icon: Icons.text_fields_rounded,
+                        color: appColors.info,
                       ),
-                      loading: () => const _StatCard(
-                        label: '连续天数', value: '...', icon: Icons.local_fire_department_rounded, color: Color(0xFFEF5350),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      flex: 11,
+                      child: streakAsync.when(
+                        data: (streak) => _SmallStatCard(
+                          label: '连续天数',
+                          value: '$streak',
+                          icon: Icons.local_fire_department_rounded,
+                          color: appColors.warning,
+                        ),
+                        loading: () => const _SmallStatCard(
+                          label: '连续天数', value: '...',
+                          icon: Icons.local_fire_department_rounded,
+                          color: AppColorsPalette.warningLoading,
+                        ),
+                        error: (e, _) => _SmallStatCard(
+                          label: '连续天数', value: '—',
+                          icon: Icons.local_fire_department_rounded,
+                          color: appColors.warning,
+                        ),
                       ),
-                      error: (e, _) => _StatCard(
-                        label: '连续天数', value: '—', icon: Icons.local_fire_department_rounded, color: Color(0xFFEF5350),
-                      ),
-                    )),
+                    ),
                   ],
                 ),
               ],
@@ -171,15 +183,110 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       ),
     );
   }
+
+  /// 简短数字格式（1000+ → 1.2k）
+  String _formatCount(int n) {
+    if (n >= 10000) return '${(n / 10000).toStringAsFixed(1)}w';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
+  }
 }
 
-class _StatCard extends StatelessWidget {
+/// 静态 const 给 const 构造器用（loading 状态需要 const）
+class AppColorsPalette {
+  static const warningLoading = Color(0xFFF59E0B);
+}
+
+/// 大卡：核心指标 + 一句话洞察
+/// 打破 4 等分 SaaS 模板：1 张大卡 + 3 张小卡，大小不同，节奏不同
+class _HeadlineStatCard extends StatelessWidget {
+  final MonthStats stats;
+  final Color color;
+
+  const _HeadlineStatCard({required this.stats, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final count = stats.diaryCount;
+
+    // 一句话洞察：根据数据动态生成
+    final insight = _insightFor(count);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 左侧：图标 + 大数字
+            Icon(Icons.book_rounded, color: color, size: 32),
+            const SizedBox(width: AppSpacing.md),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$count',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        height: 1.0,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '本月日记',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            // 右侧：洞察文本（隐藏在数据为 0 时）
+            if (count > 0)
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    insight,
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _insightFor(int count) {
+    if (count == 0) return '本月还没写\n动笔吧';
+    if (count <= 3) return '刚刚开始\n继续坚持';
+    if (count <= 7) return '一周一篇\n稳定节奏';
+    if (count <= 15) return '高频记录\n本月达人';
+    return '日记达人\n生活充实';
+  }
+}
+
+/// 小卡：紧凑
+class _SmallStatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
   final Color color;
 
-  const _StatCard({
+  const _SmallStatCard({
     required this.label,
     required this.value,
     required this.icon,
@@ -190,26 +297,29 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        )),
-              ],
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    height: 1.1,
+                  ),
             ),
-            const SizedBox(height: 8),
-            Text(value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: color,
-                    )),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 11,
+                  ),
+            ),
           ],
         ),
       ),

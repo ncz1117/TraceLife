@@ -8,9 +8,14 @@ import 'dart:io' show File;
 import 'model/day_counter.dart';
 import 'providers/day_counter_providers.dart';
 import '../../core/services/image_service.dart';
+import '../../shared/extensions/context_extensions.dart';
 
 /// 纪念日查看页（封面图风格 — Days Matter 范本）
 /// 信息层级：顶部标题 / 中央大数字 / 底部起始日
+///
+/// 颜色策略：
+/// - 有图：文字白色（on-image），蒙层走 appColors.scrim
+/// - 无图：文字主题色，渐变从 primaryContainer → primary（同色系，避 AI 通用渐变痕）
 class DayCounterViewPage extends ConsumerStatefulWidget {
   final int counterId;
   const DayCounterViewPage({super.key, required this.counterId});
@@ -59,9 +64,9 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
 
   Widget _buildContent(DayCounter counter) {
     final hasImage = counter.image.isNotEmpty;
-    final isFuture = counter.isFuture;
     final days = counter.daysUntil;
     final label = counter.labelText;
+    final scrim = context.appColors.scrim;
 
     return Scaffold(
       body: Stack(
@@ -71,20 +76,22 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
             child: hasImage
                 ? _BackgroundImage(stored: counter.image)
                 : Container(
+                    // 同色系渐变：primaryContainer → primary
+                    // 比 primaryContainer → surface 更克制，避免 AI 通用渐变痕
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
                           Theme.of(context).colorScheme.primaryContainer,
-                          Theme.of(context).colorScheme.surface,
+                          Theme.of(context).colorScheme.primary,
                         ],
                       ),
                     ),
                   ),
           ),
 
-          // 蒙层（让文字始终清晰）
+          // 蒙层（让文字始终清晰）— 走 appColors.scrim
           if (hasImage)
             Positioned.fill(
               child: DecoratedBox(
@@ -93,9 +100,9 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.45),
-                      Colors.black.withValues(alpha: 0.25),
-                      Colors.black.withValues(alpha: 0.65),
+                      scrim.withValues(alpha: 0.45),
+                      scrim.withValues(alpha: 0.25),
+                      scrim.withValues(alpha: 0.65),
                     ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
@@ -154,10 +161,10 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                                   fontSize: 24,
                                   fontWeight: FontWeight.w600,
                                   color: hasImage
-                                      ? Colors.white
+                                      ? _onImageColor
                                       : Theme.of(context)
                                           .colorScheme
-                                          .onSurface,
+                                          .onPrimaryContainer,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -172,10 +179,11 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                           style: GoogleFonts.notoSansSc(
                             fontSize: 13,
                             color: hasImage
-                                ? Colors.white70
+                                ? _onImageMuted
                                 : Theme.of(context)
                                     .colorScheme
-                                    .onSurfaceVariant,
+                                    .onPrimaryContainer
+                                    .withValues(alpha: 0.7),
                             letterSpacing: 1.2,
                           ),
                         ),
@@ -183,10 +191,13 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                         const SizedBox(height: 32),
 
                         // 2. 中央：大数字（衬线体）
-                        _BigNumber(
-                          days: days,
-                          label: label,
-                          hasImage: hasImage,
+                        Semantics(
+                          value: '$days$label',
+                          child: _BigNumber(
+                            days: days,
+                            label: label,
+                            hasImage: hasImage,
+                          ),
                         ),
 
                         const SizedBox(height: 32),
@@ -209,6 +220,11 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
   }
 }
 
+// 有图时的文字颜色（始终白）
+const Color _onImageColor = Colors.white;
+const Color _onImageMuted = Colors.white70;
+const Color _onImageSubtle = Color(0xD9FFFFFF); // white with alpha 0.85
+
 /// 大数字（衬线体 + 适当字号）
 class _BigNumber extends StatelessWidget {
   final int days;
@@ -222,7 +238,10 @@ class _BigNumber extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = hasImage ? Colors.white : Theme.of(context).colorScheme.primary;
+    // 有图：白字；无图：主色（与背景 primary 拉开层次用 onPrimary）
+    final color = hasImage
+        ? _onImageColor
+        : Theme.of(context).colorScheme.onPrimary;
 
     return Column(
       children: [
@@ -235,8 +254,12 @@ class _BigNumber extends StatelessWidget {
             color: color,
             height: 1.0,
             shadows: hasImage
-                ? const [
-                    Shadow(color: Colors.black54, blurRadius: 12),
+                ? [
+                    // scrim-based shadow，替代 Colors.black54
+                    Shadow(
+                      color: context.appColors.scrim.withValues(alpha: 0.54),
+                      blurRadius: 12,
+                    ),
                   ]
                 : null,
           ),
@@ -253,8 +276,8 @@ class _BigNumber extends StatelessWidget {
               style: GoogleFonts.notoSerifSc(
                 fontSize: 20,
                 color: hasImage
-                    ? Colors.white
-                    : Theme.of(context).colorScheme.onSurface,
+                    ? _onImageColor
+                    : Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -264,11 +287,11 @@ class _BigNumber extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: hasImage
-                    ? Colors.white.withValues(alpha: 0.2)
+                    ? _onImageColor.withValues(alpha: 0.2)
                     : Theme.of(context)
                         .colorScheme
-                        .primaryContainer
-                        .withValues(alpha: 0.6),
+                        .onPrimary
+                        .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -277,8 +300,8 @@ class _BigNumber extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: hasImage
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onPrimaryContainer,
+                      ? _onImageColor
+                      : Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
             ),
@@ -299,9 +322,10 @@ class _FooterDate extends StatelessWidget {
   Widget build(BuildContext context) {
     final isFuture = counter.isFuture;
     final isBirthday = counter.counterType == CounterType.birthday;
+
     final color = hasImage
-        ? Colors.white.withValues(alpha: 0.85)
-        : Theme.of(context).colorScheme.onSurfaceVariant;
+        ? _onImageSubtle
+        : Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.85);
 
     String dateText;
     String caption;
@@ -355,7 +379,7 @@ class _FooterDate extends StatelessWidget {
   }
 }
 
-/// 圆形图标按钮
+/// 圆形图标按钮（用 scrim 当背景，替代 Colors.black.withValues(alpha: 0.35)）
 class _CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
@@ -366,14 +390,14 @@ class _CircleIconButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Material(
-        color: Colors.black.withValues(alpha: 0.35),
+        color: context.appColors.scrim.withValues(alpha: 0.35),
         shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
           child: Padding(
             padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: Colors.white, size: 22),
+            child: Icon(icon, color: _onImageColor, size: 22),
           ),
         ),
       ),
@@ -388,16 +412,21 @@ class _BackgroundImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 加载中/失败时的兜底色：scrim 低 alpha
+    final fallback = ColoredBox(
+      color: context.appColors.scrim.withValues(alpha: 0.15),
+    );
+
     if (stored.startsWith('data:')) {
       try {
         final base64Str = stored.split(',').last;
         return Image.memory(
           base64Decode(base64Str),
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black26),
+          errorBuilder: (_, __, ___) => fallback,
         );
       } catch (_) {
-        return const ColoredBox(color: Colors.black26);
+        return fallback;
       }
     }
     return FutureBuilder<dynamic>(
@@ -405,12 +434,12 @@ class _BackgroundImage extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done ||
             snapshot.data == null) {
-          return const ColoredBox(color: Colors.black26);
+          return fallback;
         }
         return Image.file(
           snapshot.data as File,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const ColoredBox(color: Colors.black26),
+          errorBuilder: (_, __, ___) => fallback,
         );
       },
     );
