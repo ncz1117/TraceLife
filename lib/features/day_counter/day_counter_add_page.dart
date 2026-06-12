@@ -11,6 +11,8 @@ import '../../shared/widgets/app_section_header.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/image_service.dart';
+import '../../core/services/notification_service.dart';
+import '../../core/providers/notification_providers.dart';
 import '../today/providers/today_providers.dart';
 
 class DayCounterAddPage extends ConsumerStatefulWidget {
@@ -108,6 +110,16 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
       image: _image,
     );
     await DayCounterRepositoryImpl().save(counter);
+    // 调度本地推送（仅在开关开启时）
+    final notifEnabled = ref.read(notificationSettingsProvider).enabled;
+    if (notifEnabled) {
+      final settings = ref.read(notificationSettingsProvider);
+      await NotificationService.scheduleCounterNotification(
+        counter: counter,
+        daysBefore: settings.daysBefore,
+        hour: settings.hour,
+      );
+    }
     if (mounted) {
       ref.invalidate(dayCounterListProvider);
       ref.invalidate(todayCountersProvider);

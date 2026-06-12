@@ -9,6 +9,7 @@ import '../../shared/widgets/error_boundary.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/services/downloader.dart';
+import '../../core/providers/notification_providers.dart';
 import '../stats/providers/stats_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -61,6 +62,12 @@ class SettingsPage extends ConsumerWidget {
             subtitle: '心情趋势、月报、热力图',
             onTap: () => context.push('/stats'),
           ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // ── 通知 ──
+          _buildSectionHeader(context, '通知提醒', colorScheme.primary),
+          const SizedBox(height: AppSpacing.sm),
+          _buildNotificationCard(context, ref),
           const SizedBox(height: AppSpacing.xl),
 
           // ── 数据管理 ──
@@ -206,6 +213,91 @@ class SettingsPage extends ConsumerWidget {
             }
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(notificationSettingsProvider);
+    final notifier = ref.read(notificationSettingsProvider.notifier);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 总开关
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('启用提醒'),
+              subtitle: Text(
+                kIsWeb
+                    ? '⚠️ 仅手机端支持推送'
+                    : settings.enabled
+                        ? '将在纪念日前自动通知'
+                        : '关闭',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              value: settings.enabled,
+              onChanged: (v) async {
+                if (kIsWeb) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('推送仅在手机端生效')),
+                  );
+                  return;
+                }
+                await notifier.setEnabled(v);
+              },
+            ),
+
+            if (settings.enabled) ...[
+              const Divider(),
+
+              // 提前天数
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('提前几天提醒'),
+                trailing: DropdownButton<int>(
+                  value: settings.daysBefore,
+                  underline: const SizedBox.shrink(),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('1 天')),
+                    DropdownMenuItem(value: 3, child: Text('3 天')),
+                    DropdownMenuItem(value: 7, child: Text('7 天')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) notifier.setDaysBefore(v);
+                  },
+                ),
+              ),
+
+              // 提醒时间
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('提醒时间'),
+                trailing: TextButton(
+                  child: Text('${settings.hour.toString().padLeft(2, '0')}:00'),
+                  onPressed: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(
+                        hour: settings.hour,
+                        minute: 0,
+                      ),
+                    );
+                    if (picked != null) {
+                      await notifier.setHour(picked.hour);
+                    }
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -9,8 +9,9 @@ import 'repository/day_counter_repository_impl.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/app_empty_state.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../core/services/image_service.dart';
+import '../../core/services/notification_service.dart';
+import '../../core/theme/app_spacing.dart';
 
 class DayCounterPage extends ConsumerWidget {
   const DayCounterPage({super.key});
@@ -164,6 +165,11 @@ class DayCounterPage extends ConsumerWidget {
                       await ImageService.deleteImage(counter.image);
                     }
                     await repo.delete(counter.id!);
+                    // 取消该纪念日的推送
+                    if (counter.id != null) {
+                      await NotificationService.cancelCounterNotification(
+                          counter.id!);
+                    }
                     ref.invalidate(dayCounterListProvider);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

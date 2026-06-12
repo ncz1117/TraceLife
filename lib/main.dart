@@ -6,10 +6,12 @@ import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/database/database_helper.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseHelper.init();
+  await NotificationService.init();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
