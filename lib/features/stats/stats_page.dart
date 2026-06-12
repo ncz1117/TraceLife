@@ -339,9 +339,6 @@ class _HeatmapGrid extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final daysInMonth = DateTime(year, month + 1, 0).day;
     final firstDay = DateTime(year, month, 1).weekday; // 1=Mon
-    final maxCount = dailyCount.values.isEmpty
-        ? 1
-        : dailyCount.values.reduce((a, b) => a > b ? a : b);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,14 +377,8 @@ class _HeatmapGrid extends StatelessWidget {
             }
             final day = index - firstDay + 2;
             final count = dailyCount[day] ?? 0;
-            final intensity = maxCount == 0 ? 0.0 : count / maxCount;
-            final bg = count == 0
-                ? colorScheme.surfaceContainerHighest
-                : Color.lerp(
-                    colorScheme.primaryContainer,
-                    colorScheme.primary,
-                    intensity,
-                  )!;
+            final bg = _heatColor(count, colorScheme);
+            final fg = _heatTextColor(count, colorScheme);
             return Container(
               decoration: BoxDecoration(
                 color: bg,
@@ -398,11 +389,7 @@ class _HeatmapGrid extends StatelessWidget {
                 '$day',
                 style: TextStyle(
                   fontSize: 11,
-                  color: count == 0
-                      ? colorScheme.onSurfaceVariant
-                      : intensity > 0.5
-                          ? colorScheme.onPrimary
-                          : colorScheme.onPrimaryContainer,
+                  color: fg,
                   fontWeight: count > 0 ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -417,16 +404,27 @@ class _HeatmapGrid extends StatelessWidget {
             Text('少',
                 style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant)),
             const SizedBox(width: 4),
-            ...[0.2, 0.4, 0.6, 0.8, 1.0].map((v) => Padding(
+            ...[
+              ('0', _heatColor(0, colorScheme)),
+              ('1', _heatColor(1, colorScheme)),
+              ('2', _heatColor(2, colorScheme)),
+              ('3+', _heatColor(3, colorScheme)),
+            ].map((entry) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1),
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 16,
+                    height: 14,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: v == 0
-                          ? colorScheme.surfaceContainerHighest
-                          : Color.lerp(colorScheme.primaryContainer, colorScheme.primary, v),
+                      color: entry.$2,
                       borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Text(
+                      entry.$1,
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: _heatTextColor(int.parse(entry.$1.replaceAll('+', '')), colorScheme),
+                      ),
                     ),
                   ),
                 )),
@@ -437,5 +435,21 @@ class _HeatmapGrid extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// 档位配色：count → 颜色
+  /// 0 = 灰（空），1 = 浅，2 = 中，3+ = 深
+  static Color _heatColor(int count, ColorScheme scheme) {
+    if (count == 0) return scheme.surfaceContainerHighest;
+    if (count == 1) return scheme.primaryContainer;
+    if (count == 2) return Color.lerp(scheme.primaryContainer, scheme.primary, 0.6)!;
+    return scheme.primary;
+  }
+
+  /// 档位文字色：保证深色背景上文字可读
+  static Color _heatTextColor(int count, ColorScheme scheme) {
+    if (count == 0) return scheme.onSurfaceVariant;
+    if (count >= 2) return scheme.onPrimary;
+    return scheme.onPrimaryContainer;
   }
 }
