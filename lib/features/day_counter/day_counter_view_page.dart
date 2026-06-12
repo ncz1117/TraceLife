@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert' show base64Decode;
 import 'dart:io' show File;
@@ -157,15 +156,13 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.notoSerifSc(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
+                                style: context.textStyles.memorialTitle
+                                    .copyWith(
                                   color: hasImage
                                       ? _onImageColor
                                       : Theme.of(context)
                                           .colorScheme
                                           .onPrimaryContainer,
-                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ),
@@ -176,15 +173,14 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                         // 日期副标
                         Text(
                           counter.displayDate,
-                          style: GoogleFonts.notoSansSc(
-                            fontSize: 13,
+                          style: context.textStyles.memorialSubtitle
+                              .copyWith(
                             color: hasImage
                                 ? _onImageMuted
                                 : Theme.of(context)
                                     .colorScheme
                                     .onPrimaryContainer
                                     .withValues(alpha: 0.7),
-                            letterSpacing: 1.2,
                           ),
                         ),
 
@@ -248,11 +244,8 @@ class _BigNumber extends StatelessWidget {
         // 大数字
         Text(
           '$days',
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 100, // 100sp（之前 120sp 太大）
-            fontWeight: FontWeight.w900,
+          style: context.textStyles.heroNumber.copyWith(
             color: color,
-            height: 1.0,
             shadows: hasImage
                 ? [
                     // scrim-based shadow，替代 Colors.black54
@@ -273,12 +266,10 @@ class _BigNumber extends StatelessWidget {
           children: [
             Text(
               '天',
-              style: GoogleFonts.notoSerifSc(
-                fontSize: 20,
+              style: context.textStyles.memorialDay.copyWith(
                 color: hasImage
                     ? _onImageColor
                     : Theme.of(context).colorScheme.onPrimary,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 8),
@@ -296,9 +287,7 @@ class _BigNumber extends StatelessWidget {
               ),
               child: Text(
                 days == 0 ? '今天' : label,
-                style: GoogleFonts.notoSansSc(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                style: context.textTheme.labelSmall?.copyWith(
                   color: hasImage
                       ? _onImageColor
                       : Theme.of(context).colorScheme.onPrimary,
@@ -359,20 +348,14 @@ class _FooterDate extends StatelessWidget {
       children: [
         Text(
           caption,
-          style: GoogleFonts.notoSansSc(
-            fontSize: 11,
+          style: context.textStyles.memorialFooterLabel.copyWith(
             color: color.withValues(alpha: 0.7),
-            letterSpacing: 2,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           dateText,
-          style: GoogleFonts.notoSerifSc(
-            fontSize: 14,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
+          style: context.textStyles.memorialFooterDate.copyWith(color: color),
         ),
       ],
     );
