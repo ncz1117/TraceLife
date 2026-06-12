@@ -124,8 +124,11 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                     _CircleIconButton(
                       icon: Icons.edit_outlined,
                       onPressed: () async {
+                        // 编辑：用 /day-counter/add 路由 + extra 传 counter
+                        // （路由 schema：null = 新建，非空 = 编辑）
                         await context.push(
-                          '/day-counter/edit/${counter.id}',
+                          '/day-counter/add',
+                          extra: counter,
                         );
                         if (mounted) _load();
                       },
