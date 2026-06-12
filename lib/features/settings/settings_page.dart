@@ -7,8 +7,10 @@ import 'package:file_picker/file_picker.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/error_boundary.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/theme_presets.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/services/downloader.dart';
+import '../../core/services/theme_controller.dart';
 import '../../core/providers/notification_providers.dart';
 import '../stats/providers/stats_providers.dart';
 
@@ -62,6 +64,14 @@ class SettingsPage extends ConsumerWidget {
             subtitle: '心情趋势、月报、热力图',
             onTap: () => context.push('/stats'),
           ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // ── 主题 ──
+          _buildSectionHeader(context, '主题', colorScheme.primary),
+          const SizedBox(height: AppSpacing.sm),
+          _buildThemePresetsCard(context, ref),
+          const SizedBox(height: AppSpacing.sm),
+          _buildBrightnessCard(context, ref),
           const SizedBox(height: AppSpacing.xl),
 
           // ── 通知 ──
@@ -146,6 +156,62 @@ class SettingsPage extends ConsumerWidget {
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
+      ),
+    );
+  }
+
+  /// 4 套主题预设（2x2 grid）
+  Widget _buildThemePresetsCard(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeControllerProvider).preset;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppSpacing.sm,
+          crossAxisSpacing: AppSpacing.sm,
+          childAspectRatio: 1.6,
+          children: ThemePreset.values
+              .map((p) => _ThemePresetTile(
+                    preset: p,
+                    selected: p == current,
+                    onTap: () => ref.read(themeControllerProvider.notifier).setPreset(p),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  /// 明暗模式（system / light / dark）
+  Widget _buildBrightnessCard(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeControllerProvider).mode;
+    return Card(
+      child: Column(
+        children: [
+          _BrightnessTile(
+            label: '跟随系统',
+            icon: Icons.brightness_auto_rounded,
+            selected: mode == ThemeMode.system,
+            onTap: () => ref.read(themeControllerProvider.notifier).setMode(ThemeMode.system),
+          ),
+          const Divider(height: 1),
+          _BrightnessTile(
+            label: '浅色',
+            icon: Icons.light_mode_rounded,
+            selected: mode == ThemeMode.light,
+            onTap: () => ref.read(themeControllerProvider.notifier).setMode(ThemeMode.light),
+          ),
+          const Divider(height: 1),
+          _BrightnessTile(
+            label: '深色',
+            icon: Icons.dark_mode_rounded,
+            selected: mode == ThemeMode.dark,
+            onTap: () => ref.read(themeControllerProvider.notifier).setMode(ThemeMode.dark),
+          ),
+        ],
       ),
     );
   }
@@ -351,6 +417,128 @@ class _SummaryItem extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 )),
       ],
+    );
+  }
+}
+
+/// 主题预设 tile（4 选 1）
+class _ThemePresetTile extends StatelessWidget {
+  final ThemePreset preset;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ThemePresetTile({
+    required this.preset,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = ColorScheme.fromSeed(
+      seedColor: preset.seed,
+      brightness: Theme.of(context).brightness,
+    );
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: selected
+              ? preview.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          border: Border.all(
+            color: selected ? preview.primary : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 4 色色板预览
+            Row(
+              children: [
+                _ColorChip(color: preview.primary),
+                const SizedBox(width: 4),
+                _ColorChip(color: preview.secondary),
+                const SizedBox(width: 4),
+                _ColorChip(color: preview.tertiary),
+                const SizedBox(width: 4),
+                _ColorChip(color: preview.surface),
+                const Spacer(),
+                if (selected)
+                  Icon(Icons.check_circle_rounded, color: preview.primary, size: 18),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              preset.name,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: selected
+                        ? preview.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            Text(
+              preset.tagline,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: selected
+                        ? preview.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorChip extends StatelessWidget {
+  final Color color;
+  const _ColorChip({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          width: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+/// 明暗模式 tile
+class _BrightnessTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _BrightnessTile({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(label),
+      trailing: selected
+          ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary)
+          : null,
+      onTap: onTap,
     );
   }
 }

@@ -7,6 +7,7 @@ import 'core/router/app_router.dart';
 import 'core/l10n/app_localizations.dart';
 import 'core/database/database_helper.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,12 +24,13 @@ class TraceLifeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(themeControllerProvider);
     return MaterialApp.router(
       title: '迹录',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      theme: AppTheme.build(preset: settings.preset, brightness: Brightness.light),
+      darkTheme: AppTheme.build(preset: settings.preset, brightness: Brightness.dark),
+      themeMode: settings.mode,
       routerConfig: appRouter,
       localizationsDelegates: const [
         AppLocalizations.delegate,

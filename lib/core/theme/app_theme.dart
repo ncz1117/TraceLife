@@ -2,29 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
+import 'theme_presets.dart';
 
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light() {
+  /// 构建 [ThemeData] for [preset] and [brightness]
+  static ThemeData build({
+    required ThemePreset preset,
+    required Brightness brightness,
+  }) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF4F46E5),
-      brightness: Brightness.light,
+      seedColor: preset.seed,
+      brightness: brightness,
     );
     return _baseTheme(colorScheme).copyWith(
-      extensions: [AppColors.light],
+      extensions: [brightness == Brightness.light ? AppColors.light : AppColors.dark],
     );
   }
 
-  static ThemeData dark() {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF4F46E5),
-      brightness: Brightness.dark,
-    );
-    return _baseTheme(colorScheme).copyWith(
-      extensions: [AppColors.dark],
-    );
-  }
+  // 旧 API 保留（默认主题 = moe）
+  static ThemeData light() => build(preset: ThemePreset.moe, brightness: Brightness.light);
+  static ThemeData dark() => build(preset: ThemePreset.moe, brightness: Brightness.dark);
 
   static ThemeData _baseTheme(ColorScheme colorScheme) {
     return ThemeData(
