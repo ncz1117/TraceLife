@@ -20,7 +20,16 @@ class TodayPage extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        const DailyGreeting(),
+        Row(
+          children: [
+            const Expanded(child: DailyGreeting()),
+            IconButton(
+              icon: const Icon(Icons.bar_chart_rounded),
+              tooltip: '数据统计',
+              onPressed: () => context.push('/stats'),
+            ),
+          ],
+        ),
         const SizedBox(height: AppSpacing.xl),
 
         // 纪念日卡片区域
