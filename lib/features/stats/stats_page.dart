@@ -92,6 +92,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           const SizedBox(height: AppSpacing.sm),
           monthAsync.when(
             data: (stats) => Column(
+              mainAxisSize: MainAxisSize.min, // ListView 无限高度 → 必须 min
               children: [
                 // 1 大卡：核心指标 + 一句话洞察
                 _HeadlineStatCard(
@@ -454,6 +455,7 @@ class _HeatmapGrid extends StatelessWidget {
     final firstDay = DateTime(year, month, 1).weekday; // 1=Mon
 
     return Column(
+      mainAxisSize: MainAxisSize.min, // 卡片内 Column → min 让 GridView shrinkWrap 起作用
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 周标签

@@ -78,6 +78,8 @@ class _DiaryPageState extends ConsumerState<DiaryPage> {
           focusedDay: _focusedDay,
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
           calendarFormat: _calendarFormat,
+          // 隐藏 TableCalendar 自带头部（自定义行在上面已经有了月份切换+搜索）
+          headerVisible: false,
           onFormatChanged: (format) {
             setState(() => _calendarFormat = format);
           },
