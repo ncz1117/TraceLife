@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart' as img_picker;
+import 'dart:convert' show base64Decode;
 import 'model/day_counter.dart';
 import 'providers/day_counter_providers.dart';
 import 'repository/day_counter_repository_impl.dart';
@@ -8,6 +10,7 @@ import '../../shared/widgets/app_scaffold.dart';
 import '../../shared/widgets/app_section_header.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/services/image_service.dart';
 import '../today/providers/today_providers.dart';
 
 class DayCounterAddPage extends ConsumerStatefulWidget {
@@ -24,6 +27,7 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   DateTime _selectedDate = DateTime.now();
   String _selectedEmoji = '🎉';
   int _counterType = CounterType.countdown;
+  String _image = ''; // 封面图路径或 data URI
   bool get _isEdit => widget.counter != null;
 
   // 初始值，用于判断是否有未保存修改
@@ -31,12 +35,13 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
   DateTime _initialDate = DateTime.now();
   String _initialEmoji = '🎉';
   int _initialType = CounterType.countdown;
+  String _initialImage = '';
 
   bool get _hasUnsavedChanges {
     if (_counterType != _initialType) return true;
     if (_selectedEmoji != _initialEmoji) return true;
     if (_titleController.text != _initialTitle) return true;
-    // 日期比较（仅年月日）
+    if (_image != _initialImage) return true;
     if (_selectedDate.year != _initialDate.year ||
         _selectedDate.month != _initialDate.month ||
         _selectedDate.day != _initialDate.day) return true;
@@ -66,30 +71,32 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
       _titleController.text = c.title;
       _selectedEmoji = c.emoji;
       _counterType = c.counterType;
+      _image = c.image;
       if (c.counterType == CounterType.countdown) {
         _selectedDate = DateTime.parse(c.targetDate);
       } else {
-        // 生日模式：取今年
         final parts = c.targetDate.split('-');
         final month = int.parse(parts[0]);
         final day = int.parse(parts[1]);
         _selectedDate = DateTime(DateTime.now().year, month, day);
       }
     }
-    // 保存初始值
     _initialTitle = _titleController.text;
     _initialDate = _selectedDate;
     _initialEmoji = _selectedEmoji;
     _initialType = _counterType;
+    _initialImage = _image;
   }
 
   Future<void> _save() async {
     if (_titleController.text.trim().isEmpty) return;
     String targetDate;
     if (_counterType == CounterType.birthday) {
-      targetDate = '${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+      targetDate =
+          '${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     } else {
-      targetDate = '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
+      targetDate =
+          '${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}';
     }
 
     final counter = DayCounter(
@@ -98,6 +105,7 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
       targetDate: targetDate,
       counterType: _counterType,
       emoji: _selectedEmoji,
+      image: _image,
     );
     await DayCounterRepositoryImpl().save(counter);
     if (mounted) {
@@ -107,6 +115,57 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
         SnackBar(content: Text(_isEdit ? '已更新' : '已添加')),
       );
       context.pop();
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<img_picker.ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从相册选择'),
+              onTap: () => Navigator.pop(ctx, img_picker.ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('拍照'),
+              onTap: () => Navigator.pop(ctx, img_picker.ImageSource.camera),
+            ),
+            if (_image.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('移除封面图', style: TextStyle(color: Colors.red)),
+                onTap: () => Navigator.pop(ctx, null),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (source == null && _image.isEmpty) return;
+    if (source == null) {
+      setState(() => _image = '');
+      return;
+    }
+    try {
+      final List<String> picked;
+      if (source == img_picker.ImageSource.gallery) {
+        picked = await ImageService.pickFromGallery();
+      } else {
+        picked = await ImageService.pickFromCamera();
+      }
+      if (picked.isNotEmpty && mounted) {
+        setState(() => _image = picked.first);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('图片处理失败: $e')),
+        );
+      }
     }
   }
 
@@ -125,8 +184,7 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
       title: _isEdit ? '编辑纪念日' : '添加纪念日',
       showBack: true,
       onWillPop: onWillPop,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
         children: [
           TextField(
             controller: _titleController,
@@ -138,7 +196,6 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // 类型切换
           SegmentedButton<int>(
             segments: const [
               ButtonSegment(value: 0, label: Text('纪念日')),
@@ -149,7 +206,6 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
           ),
           const SizedBox(height: AppSpacing.xl),
 
-          // 日期
           const AppSectionHeader(title: '日期'),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -205,7 +261,66 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
               );
             }).toList(),
           ),
-          const Spacer(),
+          const SizedBox(height: AppSpacing.xl),
+
+          // 封面图
+          const AppSectionHeader(title: '封面图（可选）'),
+          GestureDetector(
+            onTap: _pickImage,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppSpacing.md),
+              child: Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  border: Border.all(color: colorScheme.outline),
+                ),
+                child: _image.isEmpty
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 40,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '点我选图',
+                            style: TextStyle(
+                                color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      )
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _CoverImage(stored: _image),
+                          // 右下角"更换"小标签
+                          Positioned(
+                            right: 8,
+                            bottom: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                '更换',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 80),
 
           SizedBox(
             width: double.infinity,
@@ -216,6 +331,62 @@ class _DayCounterAddPageState extends ConsumerState<DayCounterAddPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 封面图渲染 — 支持 base64 (Web) 和 Native 路径
+class _CoverImage extends StatelessWidget {
+  final String stored;
+  const _CoverImage({required this.stored});
+
+  @override
+  Widget build(BuildContext context) {
+    if (stored.startsWith('data:')) {
+      try {
+        final base64Str = stored.split(',').last;
+        return Image.memory(
+          base64Decode(base64Str),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _errorBox(context),
+        );
+      } catch (_) {
+        return _errorBox(context);
+      }
+    }
+    return FutureBuilder<dynamic>(
+      future: ImageService.resolveImageAsync(stored),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done ||
+            snapshot.data == null) {
+          return _loadingBox(context);
+        }
+        return Image.file(
+          snapshot.data,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _errorBox(context),
+        );
+      },
+    );
+  }
+
+  Widget _errorBox(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Center(child: Icon(Icons.broken_image)),
+    );
+  }
+
+  Widget _loadingBox(BuildContext context) {
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       ),
     );
   }

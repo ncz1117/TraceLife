@@ -21,6 +21,7 @@ class DayCounter with _$DayCounter {
     @Default('📅') String emoji,
     @Default(0) int colorIndex,
     @Default(0) int sortOrder,
+    @Default('') String image, // 单图封面（路径或 data URI）
     String? createdAt,
   }) = _DayCounter;
 
@@ -35,6 +36,7 @@ class DayCounter with _$DayCounter {
         emoji: map['emoji'] as String? ?? '📅',
         colorIndex: map['color_index'] as int? ?? 0,
         sortOrder: map['sort_order'] as int? ?? 0,
+        image: map['image'] as String? ?? '',
         createdAt: map['created_at'] as String?,
       );
 
@@ -46,6 +48,7 @@ class DayCounter with _$DayCounter {
         'emoji': emoji,
         'color_index': colorIndex,
         'sort_order': sortOrder,
+        'image': image,
         'created_at': createdAt ?? DateTime.now().toIso8601String(),
       };
 

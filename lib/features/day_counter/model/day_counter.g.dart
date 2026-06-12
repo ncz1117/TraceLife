@@ -15,6 +15,7 @@ _$DayCounterImpl _$$DayCounterImplFromJson(Map<String, dynamic> json) =>
       emoji: json['emoji'] as String? ?? '📅',
       colorIndex: (json['colorIndex'] as num?)?.toInt() ?? 0,
       sortOrder: (json['sortOrder'] as num?)?.toInt() ?? 0,
+      image: json['image'] as String? ?? '',
       createdAt: json['createdAt'] as String?,
     );
 
@@ -27,5 +28,6 @@ Map<String, dynamic> _$$DayCounterImplToJson(_$DayCounterImpl instance) =>
       'emoji': instance.emoji,
       'colorIndex': instance.colorIndex,
       'sortOrder': instance.sortOrder,
+      'image': instance.image,
       'createdAt': instance.createdAt,
     };

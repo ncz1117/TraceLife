@@ -30,6 +30,7 @@ mixin _$DayCounter {
   String get emoji => throw _privateConstructorUsedError;
   int get colorIndex => throw _privateConstructorUsedError;
   int get sortOrder => throw _privateConstructorUsedError;
+  String get image => throw _privateConstructorUsedError; // 单图封面（路径或 data URI）
   String? get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this DayCounter to a JSON map.
@@ -57,6 +58,7 @@ abstract class $DayCounterCopyWith<$Res> {
     String emoji,
     int colorIndex,
     int sortOrder,
+    String image,
     String? createdAt,
   });
 }
@@ -83,6 +85,7 @@ class _$DayCounterCopyWithImpl<$Res, $Val extends DayCounter>
     Object? emoji = null,
     Object? colorIndex = null,
     Object? sortOrder = null,
+    Object? image = null,
     Object? createdAt = freezed,
   }) {
     return _then(
@@ -115,6 +118,10 @@ class _$DayCounterCopyWithImpl<$Res, $Val extends DayCounter>
                 ? _value.sortOrder
                 : sortOrder // ignore: cast_nullable_to_non_nullable
                       as int,
+            image: null == image
+                ? _value.image
+                : image // ignore: cast_nullable_to_non_nullable
+                      as String,
             createdAt: freezed == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -142,6 +149,7 @@ abstract class _$$DayCounterImplCopyWith<$Res>
     String emoji,
     int colorIndex,
     int sortOrder,
+    String image,
     String? createdAt,
   });
 }
@@ -167,6 +175,7 @@ class __$$DayCounterImplCopyWithImpl<$Res>
     Object? emoji = null,
     Object? colorIndex = null,
     Object? sortOrder = null,
+    Object? image = null,
     Object? createdAt = freezed,
   }) {
     return _then(
@@ -199,6 +208,10 @@ class __$$DayCounterImplCopyWithImpl<$Res>
             ? _value.sortOrder
             : sortOrder // ignore: cast_nullable_to_non_nullable
                   as int,
+        image: null == image
+            ? _value.image
+            : image // ignore: cast_nullable_to_non_nullable
+                  as String,
         createdAt: freezed == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -219,6 +232,7 @@ class _$DayCounterImpl extends _DayCounter {
     this.emoji = '📅',
     this.colorIndex = 0,
     this.sortOrder = 0,
+    this.image = '',
     this.createdAt,
   }) : super._();
 
@@ -246,11 +260,15 @@ class _$DayCounterImpl extends _DayCounter {
   @JsonKey()
   final int sortOrder;
   @override
+  @JsonKey()
+  final String image;
+  // 单图封面（路径或 data URI）
+  @override
   final String? createdAt;
 
   @override
   String toString() {
-    return 'DayCounter(id: $id, title: $title, targetDate: $targetDate, counterType: $counterType, emoji: $emoji, colorIndex: $colorIndex, sortOrder: $sortOrder, createdAt: $createdAt)';
+    return 'DayCounter(id: $id, title: $title, targetDate: $targetDate, counterType: $counterType, emoji: $emoji, colorIndex: $colorIndex, sortOrder: $sortOrder, image: $image, createdAt: $createdAt)';
   }
 
   @override
@@ -269,6 +287,7 @@ class _$DayCounterImpl extends _DayCounter {
                 other.colorIndex == colorIndex) &&
             (identical(other.sortOrder, sortOrder) ||
                 other.sortOrder == sortOrder) &&
+            (identical(other.image, image) || other.image == image) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -284,6 +303,7 @@ class _$DayCounterImpl extends _DayCounter {
     emoji,
     colorIndex,
     sortOrder,
+    image,
     createdAt,
   );
 
@@ -310,6 +330,7 @@ abstract class _DayCounter extends DayCounter {
     final String emoji,
     final int colorIndex,
     final int sortOrder,
+    final String image,
     final String? createdAt,
   }) = _$DayCounterImpl;
   const _DayCounter._() : super._();
@@ -331,6 +352,8 @@ abstract class _DayCounter extends DayCounter {
   int get colorIndex;
   @override
   int get sortOrder;
+  @override
+  String get image; // 单图封面（路径或 data URI）
   @override
   String? get createdAt;
 
