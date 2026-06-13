@@ -13,10 +13,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DatabaseHelper.init();
   await NotificationService.init();
+
+  // 预加载主题（消除启动闪烁：默认主题 → 用户主题）
+  final container = ProviderContainer();
+  await container.read(themeControllerProvider.notifier).initialize();
+
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  runApp(const ProviderScope(child: TraceLifeApp()));
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const TraceLifeApp(),
+  ));
 }
 
 class TraceLifeApp extends ConsumerWidget {

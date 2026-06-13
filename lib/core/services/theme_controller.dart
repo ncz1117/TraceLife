@@ -28,18 +28,22 @@ class ThemeController extends Notifier<ThemeSettings> {
   static const _kMode = 'theme_mode';
 
   @override
-  ThemeSettings build() {
-    _load();
-    return ThemeSettings.defaults;
-  }
+  ThemeSettings build() => ThemeSettings.defaults;
 
-  Future<void> _load() async {
+  /// 主入口预加载：消除启动时的"默认主题 → 用户主题"闪烁
+  /// [main.dart] 在 runApp 之前 await 此方法
+  Future<void> initialize() async {
     final p = await SharedPreferences.getInstance();
     final presetId = p.getString(_kPreset);
     final modeIdx = p.getInt(_kMode);
     state = ThemeSettings(
       preset: ThemePreset.fromId(presetId),
-      mode: modeIdx == null ? ThemeMode.system : ThemeMode.values[modeIdx],
+      // 边界检查：modeIdx 可能因版本/损坏数据越界
+      mode: (modeIdx != null &&
+              modeIdx >= 0 &&
+              modeIdx < ThemeMode.values.length)
+          ? ThemeMode.values[modeIdx]
+          : ThemeMode.system,
     );
   }
 

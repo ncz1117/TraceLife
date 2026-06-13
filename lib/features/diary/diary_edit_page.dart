@@ -81,6 +81,16 @@ class _DiaryEditPageState extends ConsumerState<DiaryEditPage> {
   }
 
   Future<void> _save() async {
+    // 校验：日记内容或图片至少有一个（mood 永远有默认值 3，不检查）
+    final hasContent = _controller.text.trim().isNotEmpty;
+    final hasImages = _images.isNotEmpty;
+    if (!hasContent && !hasImages) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('日记不能是空的，加点内容或图片吧')),
+      );
+      return;
+    }
     final repo = DiaryRepositoryImpl();
     final diary = Diary(
       id: _existingId,
