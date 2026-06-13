@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert' show base64Decode;
 import 'dart:io' show File;
 import '../../core/theme/app_motion.dart';
-import '../../core/theme/app_spacing.dart';
+import '../../core/services/midnight_controller.dart';
 import '../../core/services/image_service.dart';
 import '../../shared/extensions/context_extensions.dart';
 import 'model/day_counter.dart';
@@ -48,6 +48,13 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 监听午夜信号：跨日时 setState 强制重算 days（触发 PageFlip 翻页）
+    ref.listen(midnightControllerProvider, (prev, next) {
+      if (prev != next && next > 0 && mounted) {
+        setState(() {}); // days 是从 DateTime.now() 算的，重建即可
+      }
+    });
+
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -122,6 +129,10 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                     _CircleIconButton(
                       icon: Icons.arrow_back,
                       onPressed: () => context.pop(),
+                    ),
+                    // V4 跨日提示 badge（午夜翻页后短暂显示 1.5s）
+                    const Expanded(
+                      child: Center(child: MidnightBadge()),
                     ),
                     _CircleIconButton(
                       icon: Icons.edit_outlined,
@@ -246,12 +257,9 @@ class _BigNumber extends StatelessWidget {
 
     return Column(
       children: [
-        // 大数字（独立心跳：只它自己跳，"天"和状态标签保持静止）
-        Pulse(
-          // 心跳曲线：30% 收缩（快入）+ 70% 舒张（慢出），模拟真实心率
-          heartbeat: true,
-          maxScale: 1.03, // 1.5px 移动（避免 1.02 的亚像素抖动）
-          period: const Duration(milliseconds: 1800), // 0.55Hz 接近静息心率
+        // 大数字（V4 午夜翻页：跨日时短暂翻页动效，同日时静止）
+        PageFlip(
+          value: days, // key 用 days 本身，变化才动
           child: Text(
             '$days',
             style: context.textStyles.heroNumber.copyWith(
