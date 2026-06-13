@@ -67,10 +67,10 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
         body: const Center(child: Text('纪念日不存在')),
       );
     }
-    return _buildContent(counter);
+    return _buildContent(context, counter);
   }
 
-  Widget _buildContent(DayCounter counter) {
+  Widget _buildContent(BuildContext context, DayCounter counter) {
     final hasImage = counter.image.isNotEmpty;
     final days = counter.daysUntil;
     final label = counter.labelText;
@@ -209,6 +209,18 @@ class _DayCounterViewPageState extends ConsumerState<DayCounterViewPage> {
                             days: days,
                             label: label,
                             hasImage: hasImage,
+                            onLongPress: () {
+                              // 长按大数字 = 手动触发翻页（仅用于测试）
+                              ref
+                                  .read(midnightControllerProvider.notifier)
+                                  .forceMidnight();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('🧪 手动触发翻页（仅测试）'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            },
                           ),
                         ),
 
@@ -242,12 +254,13 @@ class _BigNumber extends StatelessWidget {
   final int days;
   final String label;
   final bool hasImage;
+  final VoidCallback? onLongPress; // V4 测试用：长按手动触发翻页
   const _BigNumber({
     required this.days,
     required this.label,
     required this.hasImage,
+    this.onLongPress,
   });
-
   @override
   Widget build(BuildContext context) {
     // 有图：白字；无图：主色（与背景 primary 拉开层次用 onPrimary）
@@ -258,21 +271,24 @@ class _BigNumber extends StatelessWidget {
     return Column(
       children: [
         // 大数字（V4 午夜翻页：跨日时短暂翻页动效，同日时静止）
-        PageFlip(
-          value: days, // key 用 days 本身，变化才动
-          child: Text(
-            '$days',
-            style: context.textStyles.heroNumber.copyWith(
-              color: color,
-              shadows: hasImage
-                  ? [
-                      // scrim-based shadow，替代 Colors.black54
-                      Shadow(
-                        color: context.appColors.scrim.withValues(alpha: 0.54),
-                        blurRadius: 12,
-                      ),
-                    ]
-                  : null,
+        GestureDetector(
+          onLongPress: onLongPress,
+          child: PageFlip(
+            value: days, // key 用 days 本身，变化才动
+            child: Text(
+              '$days',
+              style: context.textStyles.heroNumber.copyWith(
+                color: color,
+                shadows: hasImage
+                    ? [
+                        // scrim-based shadow，替代 Colors.black54
+                        Shadow(
+                          color: context.appColors.scrim.withValues(alpha: 0.54),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : null,
+              ),
             ),
           ),
         ),

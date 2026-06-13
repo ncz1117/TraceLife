@@ -34,6 +34,12 @@ class MidnightController extends Notifier<int> {
     _check(null);
   }
 
+  /// 强制触发一次翻页（仅用于测试：DevTools / 长按隐藏手势）
+  /// 真实生产环境不会调用此方法
+  void forceMidnight() {
+    state = state + 1;
+  }
+
   void _check(Timer? _) {
     final now = _currentDate();
     if (now != _knownDate) {
